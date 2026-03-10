@@ -1,0 +1,16 @@
+# ============================================================
+# 3. productos/urls.py  (reemplaza el archivo vacío)
+# ============================================================
+from django.urls import path, include
+from rest_framework.routers import DefaultRouter
+from .views import CategoriaViewSet, ProductoViewSet
+
+router = DefaultRouter()
+router.register(r'categorias', CategoriaViewSet, basename='categoria')
+router.register(r'',           ProductoViewSet,  basename='producto')
+
+urlpatterns = [
+    path('', include(router.urls)),
+]
+
+
