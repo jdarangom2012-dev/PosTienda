@@ -13,6 +13,8 @@ import Inventario    from './pages/Inventario/Inventario'
 import Reportes      from './pages/Reportes/Reportes'
 import Usuarios      from './pages/Usuarios/Usuarios'
 import Categorias from './pages/Productos/components/Categorias'
+import SuperAdmin from './pages/SuperAdmin/SuperAdmin'
+
 
 
 export default function App() {
@@ -32,6 +34,11 @@ export default function App() {
           </Route>
           <Route path="/"  element={<Navigate to="/dashboard" replace />} />
           <Route path="*"  element={<Navigate to="/dashboard" replace />} />
+          <Route path="/superadmin" element={
+          <PrivateRoute roles={['SUPERADMIN']}>
+            <SuperAdmin />
+          </PrivateRoute>
+        } />
         </Routes>
       </AuthProvider>
     </BrowserRouter>

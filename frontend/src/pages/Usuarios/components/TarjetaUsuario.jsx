@@ -13,7 +13,8 @@
 // 1. src/pages/Usuarios/components/TarjetaUsuario.jsx
 // ============================================================
 const ROL_CONFIG = {
-  ADMIN:       { label: 'Administrador', color: '#8b5cf6', bg: 'rgba(139,92,246,0.15)' },
+  ADMIN:       { label: 'Coordinador', color: '#8b5cf6', bg: 'rgba(139,92,246,0.15)' },
+  COORDINADOR: { label: 'Coordinador', color: '#8b5cf6', bg: 'rgba(139,92,246,0.15)' },
   CAJERO:      { label: 'Cajero',        color: '#06b6d4', bg: 'rgba(6,182,212,0.12)'  },
   ALMACENISTA: { label: 'Almacenista',   color: '#4ade80', bg: 'rgba(74,222,128,0.12)' },
 }
@@ -57,6 +58,15 @@ export default function TarjetaUsuario({ usuario, onEditar, onToggle, esYo }) {
       {/* Email */}
       <p className="text-xs truncate" style={{ color: 'rgba(196,181,253,0.4)' }}>
         {usuario.email || 'Sin email'}
+      </p>
+      {/* Tienda */}  {/* ← agregar esto */}
+      <p className="text-xs truncate flex items-center gap-1"
+        style={{ color: 'rgba(196,181,253,0.4)' }}>
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" strokeWidth="2">
+          <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+        </svg>
+        {usuario.tienda_nombre || 'Sin tienda'}
       </p>
 
       {/* Rol + estado */}

@@ -46,17 +46,14 @@ export default function Productos() {
 
   // Debounce búsqueda
   useEffect(() => {
-    if (busqueda === '' && categoria === '') return  // evita doble carga inicial
     const t = setTimeout(() => cargar(1, busqueda, categoria), 400)
     return () => clearTimeout(t)
   }, [busqueda])
 
   // Cambio de categoría
   useEffect(() => {
-    if (categoria === '' && busqueda === '') return  // evita doble carga inicial
     cargar(1, busqueda, categoria)
   }, [categoria])
-
   // Cambio de página
   useEffect(() => {
     if (pagina === 1) return  // evita doble carga inicial

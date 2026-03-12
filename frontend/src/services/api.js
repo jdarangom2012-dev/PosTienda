@@ -65,11 +65,11 @@ export const authService = {
 
 // Servicios de autenticación
 export const usuariosService = {
-  listar:    (params) => api.get('/usuarios/',         { params }),
-  detalle:   (id)     => api.get(`/usuarios/${id}/`),
-  crear:     (data)   => api.post('/usuarios/',         data),
-  actualizar:(id, d)  => api.patch(`/usuarios/${id}/`, d),
-  perfil:    ()       => api.get('/usuarios/perfil/'),
+  listar:     (params) => api.get('/usuarios/usuarios/', { params }),
+  obtener:    (id)     => api.get(`/usuarios/usuarios/${id}/`),
+  crear:      (data)   => api.post('/usuarios/usuarios/', data),
+  actualizar: (id, data) => api.patch(`/usuarios/usuarios/${id}/`, data),
+  eliminar:   (id)     => api.delete(`/usuarios/usuarios/${id}/`),
 }
 
 // Servicios de productos
@@ -107,8 +107,9 @@ export const ventasService = {
 
 // Servicios de IA
 export const iaService = {
-  chat:         (data)   => api.post('/ia/chat/',         data),
-  predicciones: (params) => api.get('/ia/predicciones/',  { params }),
+  estado      : ()        => api.get('/ia/chat/'),
+  chat        : (mensaje) => api.post('/ia/chat/', { mensaje }),
+  predicciones: ()        => api.get('/ia/predicciones/'),
 }
 
 // Servicios de auditoría
@@ -127,4 +128,18 @@ export const categoriasService = {
   crear:     (data)   => api.post('/productos/categorias/',         data),
   actualizar:(id, d)  => api.patch(`/productos/categorias/${id}/`, d),
   eliminar:  (id)     => api.patch(`/productos/categorias/${id}/`, { activa: false }),
+}
+export const superAdminService = {
+  // Tiendas
+  tiendas:        ()          => api.get('/usuarios/tiendas/'),
+  tienda:         (id)        => api.get(`/usuarios/tiendas/${id}/`),
+  crearTienda:    (data)      => api.post('/usuarios/tiendas/', data),
+  actualizarTienda:(id, data) => api.patch(`/usuarios/tiendas/${id}/`, data),
+  activarTienda:  (id)        => api.post(`/usuarios/tiendas/${id}/activar/`),
+  desactivarTienda:(id)       => api.post(`/usuarios/tiendas/${id}/desactivar/`),
+  cambiarPlan:    (id, data)  => api.post(`/usuarios/tiendas/${id}/cambiar-plan/`, data),
+  usuariosTienda: (id)        => api.get(`/usuarios/tiendas/${id}/usuarios/`),
+
+  // Usuarios superadmin
+  crearAdmin: (data) => api.post('/usuarios/usuarios/', data),
 }

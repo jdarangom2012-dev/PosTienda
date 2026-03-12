@@ -2,16 +2,20 @@
 // 2. src/pages/Usuarios/components/ModalUsuario.jsx
 // ============================================================
 import { useState, useEffect } from 'react'
-import { usuariosService } from '../../../services/api'
+import { usuariosService, superAdminService } from '../../../services/api'
 
 const ROLES = [
-  { value: 'ADMIN',       label: 'Administrador', desc: 'Acceso total al sistema'        },
+  { value: 'COORDINADOR',       label: 'Coordinador', desc: 'Acceso total al sistema'        },
   { value: 'CAJERO',      label: 'Cajero',        desc: 'Solo POS y ventas'              },
   { value: 'ALMACENISTA', label: 'Almacenista',   desc: 'Inventario y productos'         },
 ]
 
 export default function ModalUsuario({ usuario, onGuardado, onCerrar }) {
   const esEdicion = !!usuario?.id
+  const [tiendas, setTiendas] = useState([])
+  useEffect(() => {
+    superAdminService.tiendas().then(({ data }) => setTiendas(data.results || data))
+  }, [])
   const [guardando, setGuardando] = useState(false)
   const [error,     setError]     = useState('')
   const [form, setForm] = useState({
@@ -19,6 +23,7 @@ export default function ModalUsuario({ usuario, onGuardado, onCerrar }) {
     nombre_completo: '',
     email:           '',
     rol:             'CAJERO',
+    tienda:          '', 
     password:        '',
     confirmar:       '',
   })
@@ -68,6 +73,8 @@ export default function ModalUsuario({ usuario, onGuardado, onCerrar }) {
       nombre_completo: form.nombre_completo,
       email:           form.email,
       rol:             form.rol,
+      tienda:          form.tienda,   
+      password2:       form.confirmar,   
     }
     if (form.password) payload.password = form.password
 
@@ -90,15 +97,14 @@ export default function ModalUsuario({ usuario, onGuardado, onCerrar }) {
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4"
+    <div className="fixed inset-0 z-50 flex items-start justify-center p-4 pt-15"
          style={{ background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(8px)' }}>
-      <div className="glass rounded-3xl p-6 w-full max-w-md animate-fade-in overflow-y-auto max-h-[90vh]"
+      <div className="glass rounded-3xl p-6 w-full max-w-md animate-fade-in overflow-y-auto max-h-[90vh] mt-10"
            style={{ boxShadow: '0 32px 80px rgba(124,58,237,0.3)' }}>
 
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
-          <h2 className="text-xl font-black text-white"
-              style={{ fontFamily: 'Syne, sans-serif' }}>
+          <h2 style={{ fontFamily: 'Syne, sans-serif', color: '#ffffff', fontSize: '1.25rem', fontWeight: 900 }}>
             {esEdicion ? 'Editar Usuario' : 'Nuevo Usuario'}
           </h2>
           <button onClick={onCerrar}
@@ -184,6 +190,24 @@ export default function ModalUsuario({ usuario, onGuardado, onCerrar }) {
                 </button>
               ))}
             </div>
+          </div>
+          {/* Tienda */}
+          <div>
+            <label className="block text-xs font-semibold mb-1.5 tracking-widest uppercase"
+                  style={{ color: 'rgba(196,181,253,0.6)' }}>
+              Tienda *
+            </label>
+            <select name="tienda" value={form.tienda}
+                    onChange={handleChange}
+                    className="input-pos w-full px-4 py-3 rounded-xl text-sm"
+                    style={{ background: '#1e1b4b', color: '#e2e8f0' }}>
+              <option value="" style={{ background: '#1e1b4b' }}>Selecciona una tienda</option>
+              {tiendas.map(t => (
+                <option key={t.id} value={t.id} style={{ background: '#1e1b4b' }}>
+                  {t.nombre} ({t.codigo})
+                </option>
+              ))}
+            </select>
           </div>
 
           {/* Contraseña */}

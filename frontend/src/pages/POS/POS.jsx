@@ -76,12 +76,12 @@ export default function POS() {
       <div className="flex-1 flex flex-col gap-4 min-w-0">
 
         {/* Buscador */}
-        <div className="glass rounded-2xl p-4">
+       <div className="glass rounded-2xl p-4" style={{ overflow: 'visible', position: 'relative', zIndex: 100 }}>
           <BuscadorProducto onAgregar={agregarProducto} />
         </div>
 
         {/* Carrito */}
-        <div className="glass rounded-2xl flex-1 flex flex-col overflow-hidden">
+        <div className="glass rounded-2xl flex-1 flex flex-col overflow-hidden" style={{ position: 'relative', zIndex: 1 }}>
           <div className="flex items-center justify-between px-5 py-4"
                style={{ borderBottom: '1px solid rgba(139,92,246,0.15)' }}>
             <div className="flex items-center gap-2">

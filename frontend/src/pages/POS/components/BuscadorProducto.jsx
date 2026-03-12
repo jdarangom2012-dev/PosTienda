@@ -94,7 +94,7 @@ export default function BuscadorProducto({ onAgregar }) {
 
       {/* Dropdown resultados */}
       {mostrar && resultados.length > 0 && (
-        <div className="absolute top-full left-0 right-0 mt-2 rounded-2xl overflow-hidden z-50"
+        <div className="absolute top-full left-0 right-0 mt-2 rounded-2xl overflow-hidden z-[9999]"
              style={{
                background: '#1a0a2e',
                border: '1px solid rgba(139,92,246,0.3)',
@@ -132,7 +132,7 @@ export default function BuscadorProducto({ onAgregar }) {
 
       {mostrar && resultados.length === 0 && !buscando && (
         <div className="absolute top-full left-0 right-0 mt-2 rounded-2xl px-4 py-6
-                        text-center z-50"
+                text-center z-[9999]"
              style={{
                background: '#1a0a2e',
                border: '1px solid rgba(139,92,246,0.2)',

@@ -9,6 +9,7 @@ import ModalUsuario   from './components/ModalUsuario'
 
 export default function Usuarios() {
   const { usuario: yo } = useAuth()
+  const puedeCrear = ['SUPERADMIN'].includes(yo?.rol)
   const [usuarios,     setUsuarios]     = useState([])
   const [loading,      setLoading]      = useState(true)
   const [busqueda,     setBusqueda]     = useState('')
@@ -60,11 +61,12 @@ export default function Usuarios() {
     cargar()
   }
 
-  const admins      = usuarios.filter(u => u.rol === 'ADMIN').length
+  const admins      = usuarios.filter(u => u.rol === 'COORDINADOR').length
   const cajeros     = usuarios.filter(u => u.rol === 'CAJERO').length
   const almacenistas= usuarios.filter(u => u.rol === 'ALMACENISTA').length
   const activos     = usuarios.filter(u => u.is_active).length
 
+  
   return (
     <div className="space-y-5 animate-fade-in">
 
@@ -79,23 +81,26 @@ export default function Usuarios() {
             {usuarios.length} usuarios registrados · {activos} activos
           </p>
         </div>
-        <button onClick={handleNuevo}
-                className="btn-primary px-5 py-3 rounded-xl font-bold text-white
-                           text-sm flex items-center gap-2">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
-               stroke="currentColor" strokeWidth="2.5">
-            <line x1="12" y1="5" x2="12" y2="19"/>
-            <line x1="5"  y1="12" x2="19" y2="12"/>
-          </svg>
-          Nuevo Usuario
-        </button>
+        
+        {puedeCrear && (
+          <button onClick={handleNuevo}
+                  className="btn-primary px-5 py-3 rounded-xl font-bold text-white
+                            text-sm flex items-center gap-2">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" strokeWidth="2.5">
+              <line x1="12" y1="5" x2="12" y2="19"/>
+              <line x1="5"  y1="12" x2="19" y2="12"/>
+            </svg>
+            Nuevo Usuario
+          </button>
+        )}
       </div>
 
       {/* Stats roles */}
       <div className="grid grid-cols-4 gap-3">
         {[
           { label: 'Total',        value: usuarios.length, color: '#8b5cf6' },
-          { label: 'Admins',       value: admins,          color: '#a855f7' },
+          { label: 'Coordinadores',       value: admins,          color: '#a855f7' },
           { label: 'Cajeros',      value: cajeros,         color: '#06b6d4' },
           { label: 'Almacenistas', value: almacenistas,    color: '#4ade80' },
         ].map(s => (
@@ -129,12 +134,13 @@ export default function Usuarios() {
         </div>
 
         <select value={filtroRol}
-                onChange={e => setFiltroRol(e.target.value)}
-                className="input-pos px-4 py-2.5 rounded-xl text-sm">
-          <option value="">Todos los roles</option>
-          <option value="ADMIN">Administrador</option>
-          <option value="CAJERO">Cajero</option>
-          <option value="ALMACENISTA">Almacenista</option>
+          onChange={e => setFiltroRol(e.target.value)}
+          className="input-pos px-4 py-2.5 rounded-xl text-sm"
+          style={{ background: '#1e1b4b', color: '#e2e8f0' }}>
+          <option value=""             style={{ background: '#1e1b4b', color: '#e2e8f0' }}>Todos los roles</option>
+          <option value="COORDINADOR" style={{ background: '#1e1b4b', color: '#e2e8f0' }}>Coordinador</option>
+          <option value="CAJERO"       style={{ background: '#1e1b4b', color: '#e2e8f0' }}>Cajero</option>
+          <option value="ALMACENISTA"  style={{ background: '#1e1b4b', color: '#e2e8f0' }}>Almacenista</option>
         </select>
 
         {(busqueda || filtroRol) && (
@@ -167,10 +173,13 @@ export default function Usuarios() {
             </svg>
           </div>
           <p className="text-sm font-medium text-white">No hay usuarios</p>
-          <button onClick={handleNuevo}
-                  className="btn-primary px-4 py-2 rounded-xl text-sm font-bold text-white mt-2">
-            + Nuevo Usuario
-          </button>
+  
+          {puedeCrear && (
+            <button onClick={handleNuevo}
+                    className="btn-primary px-4 py-2 rounded-xl text-sm font-bold text-white mt-2">
+              + Nuevo Usuario
+            </button>
+          )}
         </div>
       ) : (
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">

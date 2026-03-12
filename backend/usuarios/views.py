@@ -16,6 +16,9 @@ from .serializers import (
     CambiarPasswordSerializer, PerfilSerializer
 )
 from .mixins import TiendaMixin
+from rest_framework.exceptions import PermissionDenied
+from rest_framework.filters import SearchFilter
+from .serializers import UsuarioSerializer, UsuarioCrearSerializer, TiendaSerializer
 
 
 # ── Permisos ─────────────────────────────────────────────────
@@ -133,91 +136,96 @@ class CambiarPasswordView(APIView):
 
 
 # ── Usuarios (CRUD por tienda) ────────────────────────────────
-class UsuarioViewSet(TiendaMixin, viewsets.ModelViewSet):
-    queryset           = Usuario.objects.all().order_by('username')
-    permission_classes = [EsAdmin]
+class UsuarioViewSet(viewsets.ModelViewSet):  # ← quitar TiendaMixin
+    queryset           = Usuario.objects.all().order_by('id')
+    serializer_class   = UsuarioSerializer
+    permission_classes = [IsAuthenticated]
+    filter_backends    = [SearchFilter]
+    search_fields      = ['username', 'nombre_completo', 'email']
 
     def get_queryset(self):
-        # TiendaMixin filtra por tienda automáticamente
-        qs     = super().get_queryset()
-        search = self.request.query_params.get('search', '')
-        rol    = self.request.query_params.get('rol', '')
-        if search:
-            from django.db.models import Q
-            qs = qs.filter(
-                Q(username__icontains=search) |
-                Q(nombre_completo__icontains=search) |
-                Q(email__icontains=search)
-            )
+        qs   = Usuario.objects.all().order_by('id')
+        user = self.request.user
+        rol  = self.request.query_params.get('rol', '')
+        
+        if user.es_superadmin:
+            qs = qs.exclude(rol='SUPERADMIN')
+       
+        else:
+            tienda = getattr(self.request, 'tienda', None)
+       
+            qs = qs.filter(tienda=tienda).exclude(rol='SUPERADMIN') if tienda else qs.none()
+
         if rol:
             qs = qs.filter(rol=rol)
-        return qs
+       
 
+        return qs
     def get_serializer_class(self):
         if self.action == 'create':
             return UsuarioCrearSerializer
         return UsuarioSerializer
 
     def perform_create(self, serializer):
-        tienda = self.get_tienda()
-        serializer.save(tienda=tienda)
+        user      = self.request.user
+        tienda_id = self.request.data.get('tienda')
+        if user.es_superadmin:
+            tienda = Tienda.objects.get(id=tienda_id) if tienda_id else None
+            serializer.save(tienda=tienda)
+        else:
+            raise PermissionDenied('No tienes permiso para crear usuarios.')
 
-    def destroy(self, request, *args, **kwargs):
-        usuario           = self.get_object()
-        usuario.is_active = False
-        usuario.save()
-        return Response(
-            {'mensaje': f'Usuario {usuario.username} desactivado correctamente.'},
-            status=status.HTTP_200_OK
-        )
+    def get_permissions(self):
+        if self.request.user.rol not in ['SUPERADMIN']:  # ← solo SUPERADMIN
+            raise PermissionDenied('No tienes permiso para gestionar usuarios.')
+        return super().get_permissions()
 
-    @action(detail=True, methods=['post'], url_path='activar')
-    def activar(self, request, pk=None):
-        usuario           = self.get_object()
-        usuario.is_active = True
-        usuario.save()
-        return Response({'mensaje': f'Usuario {usuario.username} activado.'})
-
-    @action(detail=True, methods=['post'], url_path='desactivar')
-    def desactivar(self, request, pk=None):
-        usuario = self.get_object()
-        if usuario == request.user:
-            return Response(
-                {'error': 'No puedes desactivarte a ti mismo.'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-        usuario.is_active = False
-        usuario.save()
-        return Response({'mensaje': f'Usuario {usuario.username} desactivado.'})
-
-    @action(detail=False, methods=['get'], url_path='por-rol')
-    def por_rol(self, request):
-        rol = request.query_params.get('rol')
-        qs  = self.get_queryset().filter(is_active=True)
-        if rol:
-            qs = qs.filter(rol=rol)
-        return Response(UsuarioSerializer(qs, many=True).data)
+    def perform_create(self, serializer):
+        user   = self.request.user
+        if not user.es_superadmin:
+            raise PermissionDenied('Solo el Superadmin puede crear usuarios.')
+        serializer.save()
+    
+    def get_serializer_class(self):
+        if self.action == 'create':
+            return UsuarioCrearSerializer
+        return UsuarioSerializer
 
 
 # ── Tiendas (solo superadmin) ─────────────────────────────────
 class TiendaViewSet(viewsets.ModelViewSet):
-    queryset           = Tienda.objects.all().order_by('nombre')
-    permission_classes = [EsSuperAdmin]
-
-    def get_serializer_class(self):
-        from .serializers import TiendaSerializer
-        return TiendaSerializer
+    queryset           = Tienda.objects.all()
+    permission_classes = [IsAuthenticated, EsSuperAdmin]
+    serializer_class   = TiendaSerializer
 
     @action(detail=True, methods=['post'], url_path='activar')
     def activar(self, request, pk=None):
         tienda        = self.get_object()
         tienda.activa = True
         tienda.save()
-        return Response({'mensaje': f'Tienda {tienda.nombre} activada.'})
+        return Response({'mensaje': f'Tienda "{tienda.nombre}" activada.'})
 
     @action(detail=True, methods=['post'], url_path='desactivar')
     def desactivar(self, request, pk=None):
         tienda        = self.get_object()
         tienda.activa = False
         tienda.save()
-        return Response({'mensaje': f'Tienda {tienda.nombre} desactivada.'})
+        return Response({'mensaje': f'Tienda "{tienda.nombre}" desactivada.'})
+
+    @action(detail=True, methods=['get'], url_path='usuarios')
+    def usuarios(self, request, pk=None):
+        tienda   = self.get_object()
+        usuarios = Usuario.objects.filter(tienda=tienda)
+        return Response(UsuarioSerializer(usuarios, many=True).data)
+
+    @action(detail=True, methods=['post'], url_path='cambiar-plan')
+    def cambiar_plan(self, request, pk=None):
+        tienda      = self.get_object()
+        plan        = request.data.get('plan')
+        ia_activa   = request.data.get('ia_activa')
+        ia_tokens   = request.data.get('ia_tokens_mes')
+        if plan:        tienda.plan          = plan
+        if ia_activa is not None: tienda.ia_activa = ia_activa
+        if ia_tokens:   tienda.ia_tokens_mes = ia_tokens
+        tienda.save()
+        return Response(TiendaSerializer(tienda).data)

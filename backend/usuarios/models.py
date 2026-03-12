@@ -72,7 +72,7 @@ class Tienda(models.Model):
 class Usuario(AbstractUser):
     ROL_CHOICES = [
         ('SUPERADMIN',   'Super Administrador'),
-        ('ADMIN',        'Administrador'),
+        ('COORDINADOR',  'Coordinador'),
         ('CAJERO',       'Cajero'),
         ('ALMACENISTA',  'Almacenista'),
     ]

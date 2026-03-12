@@ -6,11 +6,12 @@ from rest_framework.routers import DefaultRouter
 from rest_framework_simplejwt.views import TokenRefreshView
 from .views import (
     LoginView, LogoutView, PerfilView,
-    CambiarPasswordView, UsuarioViewSet
+    CambiarPasswordView, UsuarioViewSet, TiendaViewSet
 )
 
 router = DefaultRouter()
-router.register(r'', UsuarioViewSet, basename='usuario')
+router.register(r'usuarios', UsuarioViewSet, basename='usuario')
+router.register(r'tiendas',  TiendaViewSet,  basename='tienda')
 
 urlpatterns = [
     # Auth
@@ -25,3 +26,5 @@ urlpatterns = [
     # CRUD de usuarios (solo admin)
     path('', include(router.urls)),
 ]
+
+

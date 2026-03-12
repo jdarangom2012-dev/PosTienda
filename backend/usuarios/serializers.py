@@ -28,12 +28,16 @@ class UsuarioSerializer(serializers.ModelSerializer):
         source='get_rol_display',
         read_only=True
     )
+    tienda_nombre = serializers.SerializerMethodField() 
+    
+    def get_tienda_nombre(self, obj):          # ← debe estar DENTRO de la clase
+        return obj.tienda.nombre if obj.tienda else None
 
     class Meta:
         model  = Usuario
         fields = (
             'id', 'username', 'nombre_completo',
-            'email', 'rol', 'rol_display',
+            'email', 'rol', 'rol_display', 'tienda_nombre',
             'is_active', 'last_login', 'date_joined'
         )
         read_only_fields = ('id', 'last_login', 'date_joined')
@@ -60,9 +64,11 @@ class UsuarioCrearSerializer(serializers.ModelSerializer):
         model  = Usuario
         fields = (
             'username', 'nombre_completo',
-            'email', 'rol', 'password', 'password2'
+            'email', 'rol', 'rol_display', 
+            'tienda','tienda_nombre', 'password', 'password2'
         )
-
+        read_only_fields = ('id', 'last_login', 'date_joined')
+        
     def validate(self, attrs):
         if attrs['password'] != attrs['password2']:
             raise serializers.ValidationError(
@@ -126,7 +132,7 @@ class PerfilSerializer(serializers.ModelSerializer):
     """
     class Meta:
         model  = Usuario
-        fields = ('id', 'username', 'nombre_completo', 'email', 'rol', 'last_login')
+        fields = ('id', 'username', 'nombre_completo', 'email', 'rol',  'last_login')
         read_only_fields = ('id', 'username', 'rol', 'last_login')
 
 
