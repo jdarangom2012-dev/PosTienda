@@ -44,7 +44,35 @@ class CustomTokenSerializer(TokenObtainPairSerializer):
 
     def validate(self, attrs):
         codigo = attrs.pop('codigo_tienda', '').strip().upper()
+        
+        # Primero validar credenciales
+        data    = super().validate(attrs)
+        usuario = self.user
 
+        # SUPERADMIN puede entrar con cualquier código de tienda
+        if usuario.es_superadmin:
+            try:
+                tienda = Tienda.objects.filter(activa=True).first()
+            except:
+                tienda = None
+            
+            token              = self.get_token(usuario)
+            token['tienda_id'] = tienda.id if tienda else None
+            token['rol']       = 'SUPERADMIN'
+
+            data['access']  = str(token.access_token)
+            data['usuario'] = {
+                'id':             usuario.id,
+                'username':       usuario.username,
+                'nombre_completo': getattr(usuario, 'nombre_completo', usuario.username),
+                'rol':            'SUPERADMIN',
+                'tienda_id':      tienda.id if tienda else None,
+                'tienda_nombre':  tienda.nombre if tienda else '',
+                'tienda_codigo':  tienda.codigo if tienda else '',
+            }
+            return data
+
+        # Usuarios normales — validar tienda
         try:
             tienda = Tienda.objects.get(codigo=codigo, activa=True)
         except Tienda.DoesNotExist:
@@ -52,10 +80,7 @@ class CustomTokenSerializer(TokenObtainPairSerializer):
                 {'codigo_tienda': 'Código de tienda inválido o tienda inactiva.'}
             )
 
-        data    = super().validate(attrs)
-        usuario = self.user
-
-        if not usuario.es_superadmin and usuario.tienda_id != tienda.id:
+        if usuario.tienda_id != tienda.id:
             raise serializers.ValidationError(
                 {'detail': 'Este usuario no pertenece a esa tienda.'}
             )
@@ -68,7 +93,7 @@ class CustomTokenSerializer(TokenObtainPairSerializer):
         data['usuario'] = {
             'id':             usuario.id,
             'username':       usuario.username,
-            'nombre_completo':getattr(usuario, 'nombre_completo', usuario.username),
+            'nombre_completo': getattr(usuario, 'nombre_completo', usuario.username),
             'rol':            getattr(usuario, 'rol', 'CAJERO'),
             'tienda_id':      tienda.id,
             'tienda_nombre':  tienda.nombre,
