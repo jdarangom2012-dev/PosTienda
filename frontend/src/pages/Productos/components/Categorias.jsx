@@ -25,7 +25,7 @@ function ModalCategoria({ categoria, onGuardado, onCerrar }) {
   })
   const [guardando, setGuardando] = useState(false)
   const [error,     setError]     = useState('')
-
+  
   const handleGuardar = async () => {
     if (!form.nombre.trim()) {
       setError('El nombre es obligatorio.')

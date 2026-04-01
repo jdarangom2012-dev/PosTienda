@@ -23,6 +23,7 @@ export default function Inventario() {
       const params = {}
       if (busqueda)     params.search      = busqueda
       if (filtroAlerta) params.bajo_minimo = true
+      params.page_size = 1000 
       const { data } = await inventarioService.listar(params)
       setInventario(data.results || data)
     } catch (err) {

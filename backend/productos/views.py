@@ -37,7 +37,7 @@ class CategoriaViewSet(TiendaMixin, viewsets.ModelViewSet):
 class ProductoViewSet(TiendaMixin, viewsets.ModelViewSet):
     queryset = Producto.objects.select_related(
                    'categoria', 'inventario'
-               ).all()
+               ).order_by('nombre')
     permission_classes = [IsAuthenticated]
     filter_backends    = [SearchFilter, OrderingFilter]  # ← AGREGAR
     search_fields      = ['nombre', 'codigo_barras']     # ← AGREGAR
@@ -53,7 +53,7 @@ class ProductoViewSet(TiendaMixin, viewsets.ModelViewSet):
 
     def get_queryset(self):
         # Primero filtra por tienda via TiendaMixin
-        qs = super().get_queryset().filter(activo=True)
+        qs = super().get_queryset().filter(activo=True).order_by('nombre') 
         # Filtro adicional por categoría
         categoria_id = self.request.query_params.get('categoria')
         if categoria_id:

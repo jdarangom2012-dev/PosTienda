@@ -12,13 +12,20 @@ from productos.models            import Producto
 from .models                     import Inventario, MovimientoInventario
 from .serializers                import (
     InventarioSerializer, MovimientoInventarioSerializer,
-    EntradaMercanciaSerializer, AjusteInventarioSerializer
+    EntradaMercanciaSerializer, AjusteInventarioSerializer, CrearMovimientoSerializer   
 )
 from usuarios.mixins import TiendaMixin
 from usuarios.models import Usuario
+from rest_framework.pagination import PageNumberPagination
+
+class InventarioPagination(PageNumberPagination):
+    page_size = 20
+    page_size_query_param = 'page_size'
+    max_page_size = 2000          # ← permite hasta 2000
 
 
 class InventarioViewSet(TiendaMixin, viewsets.ReadOnlyModelViewSet):
+    pagination_class = InventarioPagination
     queryset = Inventario.objects.select_related(
         'producto', 'producto__categoria'
     ).all()
@@ -81,7 +88,8 @@ class MovimientoViewSet(TiendaMixin, viewsets.ModelViewSet):
     @transaction.atomic
     def perform_create(self, serializer):
         tienda     = self.get_tienda()
-        producto   = serializer.validated_data['producto']
+        producto_id = serializer.validated_data['producto_id']
+        producto    = Producto.objects.get(id=producto_id)
         tipo       = serializer.validated_data['tipo_movimiento']
         cantidad   = serializer.validated_data['cantidad']
 
@@ -106,11 +114,15 @@ class MovimientoViewSet(TiendaMixin, viewsets.ModelViewSet):
         inventario.save()
 
         usuario_obj = Usuario.objects.get(pk=self.request.user.pk)
-        serializer.save(
-            tienda         = tienda,
-            stock_anterior = stock_anterior,
-            stock_nuevo    = stock_nuevo,
-            usuario        = usuario_obj,
+        MovimientoInventario.objects.create(
+            tienda          = tienda,
+            producto        = producto,
+            tipo_movimiento = tipo,
+            cantidad        = cantidad,
+            stock_anterior  = stock_anterior,
+            stock_nuevo     = stock_nuevo,
+            motivo          = serializer.validated_data.get('motivo', ''),
+            usuario         = usuario_obj,
         )
 
     @action(detail=False, methods=['get'], url_path='por-producto/(?P<producto_id>[^/.]+)')
@@ -118,6 +130,10 @@ class MovimientoViewSet(TiendaMixin, viewsets.ModelViewSet):
         qs = self.get_queryset().filter(producto_id=producto_id)
         return Response(MovimientoInventarioSerializer(qs, many=True).data)
 
+    def get_serializer_class(self):
+        if self.action == 'create':
+            return CrearMovimientoSerializer
+        return MovimientoInventarioSerializer
 
 class EntradaMercanciaView(APIView):
     permission_classes = [IsAuthenticated]
@@ -167,51 +183,41 @@ class AjusteInventarioView(APIView):
     permission_classes = [IsAuthenticated]
 
     @transaction.atomic
-    def post(self, request):
-        serializer = AjusteInventarioSerializer(data=request.data)
-        if not serializer.is_valid():
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    def perform_create(self, serializer):
+        tienda      = self.get_tienda()
+        producto_id = serializer.validated_data['producto_id']
+        tipo        = serializer.validated_data['tipo_movimiento']
+        cantidad    = serializer.validated_data['cantidad']
 
-        data       = serializer.validated_data
-        tienda     = request.tienda
-        producto   = Producto.objects.get(id=data['producto_id'])
-        inventario = Inventario.objects.select_for_update().get(
+        producto = Producto.objects.get(id=producto_id)
+
+        inventario     = Inventario.objects.select_for_update().get(
             producto=producto, tienda=tienda
         )
-
         stock_anterior = inventario.cantidad_actual
-        stock_nuevo    = data['cantidad_nueva']
-        diferencia     = stock_nuevo - stock_anterior
 
-        if diferencia == 0:
-            return Response(
-                {'mensaje': 'El stock nuevo es igual al actual.'},
-                status=status.HTTP_200_OK
-            )
-
-        tipo = 'AJUSTE_POS' if diferencia > 0 else 'AJUSTE_NEG'
+        if tipo == 'AJUSTE':
+            stock_nuevo = cantidad
+        elif tipo == 'SALIDA':
+            if cantidad > stock_anterior:
+                from rest_framework.exceptions import ValidationError
+                raise ValidationError(f'Stock insuficiente. Disponible: {stock_anterior}')
+            stock_nuevo = stock_anterior - cantidad
+        else:
+            stock_nuevo = stock_anterior + cantidad
 
         inventario.cantidad_actual = stock_nuevo
         inventario.save()
 
-        usuario_obj = Usuario.objects.get(pk=request.user.pk)
-        movimiento  = MovimientoInventario.objects.create(
+        usuario_obj = Usuario.objects.get(pk=self.request.user.pk)
+        MovimientoInventario.objects.create(
             tienda          = tienda,
             producto        = producto,
             tipo_movimiento = tipo,
-            cantidad        = abs(diferencia),
+            cantidad        = cantidad,
             stock_anterior  = stock_anterior,
             stock_nuevo     = stock_nuevo,
-            referencia_tipo = 'AJUSTE',
-            motivo          = data['motivo'],
+            motivo          = serializer.validated_data.get('motivo', ''),
             usuario         = usuario_obj,
         )
 
-        return Response({
-            'mensaje':        f'Ajuste registrado para {producto.nombre}.',
-            'stock_anterior': float(stock_anterior),
-            'stock_nuevo':    float(stock_nuevo),
-            'diferencia':     float(diferencia),
-            'tipo_ajuste':    tipo,
-            'movimiento_id':  movimiento.id,
-        }, status=status.HTTP_200_OK)

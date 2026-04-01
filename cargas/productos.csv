@@ -1,0 +1,114 @@
+codigo_barras;nombre;descripcion;precio_costo;precio_venta;unidad_medida;imagen_url;stock_minimo;activo;created_at;updated_at;categoria_id;tienda_id; Cantidad 
+7.70729E+12;libreta;Producto de Papeleria  libreta;3200;3200;PIEZA;NULL;5;True;30/03/2026 22:25;30/03/2026 22:25;1;2; 2.00 
+7.70871E+12;cuaderno zeppelin;Producto de Papeleria  cuaderno zeppelin;4200;4200;PIEZA;NULL;5;True;30/03/2026 22:25;30/03/2026 22:25;1;2; 9.00 
+7.70767E+12;cuaderno 50 hojas ;Producto de Papeleria  cuaderno 50 hojas ;2500;2500;PIEZA;NULL;5;True;30/03/2026 22:25;30/03/2026 22:25;1;2; 26.00 
+7.7011E+12;argollado 80 hojas ;Producto de Papeleria  argollado 80 hojas ;15000;15000;PIEZA;NULL;5;True;30/03/2026 22:25;30/03/2026 22:25;1;2; 9.00 
+7.70108E+12;ferxxo argollado;Producto de Papeleria  ferxxo argollado;19500;19500;PIEZA;NULL;5;True;30/03/2026 22:25;30/03/2026 22:25;1;2; 3.00 
+7.70729E+12;5 materias peque�;Producto de Papeleria  5 materias peque�;17500;17500;PIEZA;NULL;5;True;30/03/2026 22:25;30/03/2026 22:25;1;2; 2.00 
+7.7079E+12;7 materias ;Producto de Papeleria  7 materias ;28000;28000;PIEZA;NULL;5;True;30/03/2026 22:25;30/03/2026 22:25;1;2; 1.00 
+6.71876E+11;5 materias grande ;Producto de Papeleria  5 materias grande ;20000;20000;PIEZA;NULL;5;True;30/03/2026 22:25;30/03/2026 22:25;1;2; 3.00 
+7.70108E+12;ferxxo cosido;Producto de Papeleria  ferxxo cosido;12600;12600;PIEZA;NULL;5;True;30/03/2026 22:25;30/03/2026 22:25;1;2; 4.00 
+7.70767E+12;cuaderno sencillo;Producto de Papeleria  cuaderno sencillo;3000;3000;PIEZA;NULL;5;True;30/03/2026 22:25;30/03/2026 22:25;1;2; 19.00 
+7.70216E+12;vinilo unidad;Producto de Papeleria  vinilo unidad;1200;1200;PIEZA;NULL;5;True;30/03/2026 22:25;30/03/2026 22:25;1;2; 16.00 
+7.70216E+12;tempera x 6;Producto de Papeleria  tempera x 6;5000;5000;PIEZA;NULL;5;True;30/03/2026 22:25;30/03/2026 22:25;1;2; 6.00 
+7.70859E+12;borrador ;Producto de Papeleria  borrador ;1000;1000;PIEZA;NULL;5;True;30/03/2026 22:25;30/03/2026 22:25;1;2; 39.00 
+7.50103E+12;paper mate lapicero ;Producto de Papeleria  paper mate lapicero ;1500;1500;PIEZA;NULL;5;True;30/03/2026 22:25;30/03/2026 22:25;1;2; 49.00 
+7.70216E+12;colbon 40g;Producto de Papeleria  colbon 40g;1000;1000;PIEZA;NULL;5;True;30/03/2026 22:25;30/03/2026 22:25;1;2; 10.00 
+7.70216E+12;colbon 125g;Producto de Papeleria  colbon 125g;3000;3000;PIEZA;NULL;5;True;30/03/2026 22:25;30/03/2026 22:25;1;2; 1.00 
+7.70216E+12;colbon 250g;Producto de Papeleria  colbon 250g;5000;5000;PIEZA;NULL;5;True;30/03/2026 22:25;30/03/2026 22:25;1;2; 5.00 
+7.70216E+12;colbon 20g;Producto de Papeleria  colbon 20g;800;800;PIEZA;NULL;5;True;30/03/2026 22:25;30/03/2026 22:25;1;2; 9.00 
+7.7011E+12;colores vibrantes ;Producto de Papeleria  colores vibrantes ;12500;12500;PIEZA;NULL;5;True;30/03/2026 22:25;30/03/2026 22:25;1;2; 4.00 
+7.70211E+12;colores norma x 15;Producto de Papeleria  colores norma x 15;16000;16000;PIEZA;NULL;5;True;30/03/2026 22:25;30/03/2026 22:25;1;2; 4.00 
+7.70211E+12;colores norma x 12;Producto de Papeleria  colores norma x 12;10800;10800;PIEZA;NULL;5;True;30/03/2026 22:25;30/03/2026 22:25;1;2; 1.00 
+7.70593E+12;crocis mapa ;Producto de Papeleria  crocis mapa ;1800;1800;PIEZA;NULL;5;True;30/03/2026 22:25;30/03/2026 22:25;1;2; 5.00 
+7.70921E+12;juego geometrico;Producto de Papeleria  juego geometrico;6200;6200;PIEZA;NULL;5;True;30/03/2026 22:25;30/03/2026 22:25;1;2; 3.00 
+7.70843E+12;abaco;Producto de Papeleria  abaco;8500;8500;PIEZA;NULL;5;True;30/03/2026 22:25;30/03/2026 22:25;1;2; 2.00 
+7.70216E+12;pegasti barra ;Producto de Papeleria  pegasti barra ;4000;4000;PIEZA;NULL;5;True;30/03/2026 22:25;30/03/2026 22:25;1;2; 2.00 
+7.45008E+12;grapas ;Producto de Papeleria  grapas ;300;300;PIEZA;NULL;5;True;30/03/2026 22:25;30/03/2026 22:25;1;2; 2.00 
+7.70334E+12;minas ;Producto de Papeleria  minas ;2000;2000;PIEZA;NULL;5;True;30/03/2026 22:25;30/03/2026 22:25;1;2; 1.00 
+7.70662E+12;foamy;Producto de Papeleria  foamy;600;600;PIEZA;NULL;5;True;30/03/2026 22:25;30/03/2026 22:25;1;2; 13.00 
+7.70349E+12;lapiz amarillo;Producto de Papeleria  lapiz amarillo;1000;1000;PIEZA;NULL;5;True;30/03/2026 22:25;30/03/2026 22:25;1;2; 24.00 
+7.70349E+12;lapiz rojo ;Producto de Papeleria  lapiz rojo ;1000;1000;PIEZA;NULL;5;True;30/03/2026 22:25;30/03/2026 22:25;1;2; 24.00 
+7.70859E+12;marcador x 12;Producto de Papeleria  marcador x 12;32000;32000;PIEZA;NULL;5;True;30/03/2026 22:25;30/03/2026 22:25;1;2; 3.00 
+7.70859E+12;marcador doble punta ;Producto de Papeleria  marcador doble punta ;23000;23000;PIEZA;NULL;5;True;30/03/2026 22:25;30/03/2026 22:25;1;2; 1.00 
+7.70586E+12;transportador 180;Producto de Papeleria  transportador 180;1500;1500;PIEZA;NULL;5;True;30/03/2026 22:25;30/03/2026 22:25;1;2; 6.00 
+7.70334E+12;escuadra ;Producto de Papeleria  escuadra ;5100;5100;PIEZA;NULL;5;True;30/03/2026 22:25;30/03/2026 22:25;1;2; 2.00 
+7.70801E+12;calculadora cientifica ;Producto de Papeleria  calculadora cientifica ;20000;20000;PIEZA;NULL;5;True;30/03/2026 22:25;30/03/2026 22:25;1;2; 2.00 
+4.97185E+12;calculadora cacio ;Producto de Papeleria  calculadora cacio ;15000;15000;PIEZA;NULL;5;True;30/03/2026 22:25;30/03/2026 22:25;1;2; 2.00 
+9.0238E+12;compas metalico;Producto de Papeleria  compas metalico;7000;7000;PIEZA;NULL;5;True;30/03/2026 22:25;30/03/2026 22:25;1;2; 1.00 
+7.70859E+12;compas diverclass;Producto de Papeleria  compas diverclass;2500;2500;PIEZA;NULL;5;True;30/03/2026 22:25;30/03/2026 22:25;1;2; 1.00 
+7.70216E+12;plastilina peque�;Producto de Papeleria  plastilina peque�;2000;2000;PIEZA;NULL;5;True;30/03/2026 22:25;30/03/2026 22:25;1;2; 2.00 
+7.70216E+12;platilina larga ;Producto de Papeleria  platilina larga ;5200;5200;PIEZA;NULL;5;True;30/03/2026 22:25;30/03/2026 22:25;1;2; 2.00 
+7.70216E+12;platilina 13 colores ;Producto de Papeleria  platilina 13 colores ;5500;5500;PIEZA;NULL;5;True;30/03/2026 22:25;30/03/2026 22:25;1;2; 2.00 
+7.70216E+12;platilina gruesa ;Producto de Papeleria  platilina gruesa ;5500;5500;PIEZA;NULL;5;True;30/03/2026 22:25;30/03/2026 22:25;1;2; 4.00 
+7.70808E+12;colores graf;Producto de Papeleria  colores graf;5000;5000;PIEZA;NULL;5;True;30/03/2026 22:25;30/03/2026 22:25;1;2; 5.00 
+7.70586E+12;linea azul;Producto de Papeleria  linea azul;3000;3000;PIEZA;NULL;5;True;30/03/2026 22:25;30/03/2026 22:25;1;2; 3.00 
+7.70871E+12;regla eterna;Producto de Papeleria  regla eterna;1400;1400;PIEZA;NULL;5;True;30/03/2026 22:25;30/03/2026 22:25;1;2; 3.00 
+6.92731E+12;regla flex;Producto de Papeleria  regla flex;1500;1500;PIEZA;NULL;5;True;30/03/2026 22:25;30/03/2026 22:25;1;2; 1.00 
+7.70999E+12;gp 134;Producto de Papeleria  gp 134;4500;4500;PIEZA;NULL;5;True;30/03/2026 22:25;30/03/2026 22:25;1;2; 4.00 
+7.70921E+12;gp 200;Producto de Papeleria  gp 200;10800;10800;PIEZA;NULL;5;True;30/03/2026 22:25;30/03/2026 22:25;1;2; 3.00 
+7.7003E+12;jabon liquido;Producto de Aseo jabon liquido;14000;14000;PIEZA;NULL;5;True;30/03/2026 22:25;30/03/2026 22:25;2;2; 1.00 
+7.7003E+12;liquido peque��;Producto de Aseo liquido peque��;8000;8000;PIEZA;NULL;5;True;30/03/2026 22:25;30/03/2026 22:25;2;2; 5.00 
+7.56782E+11;liquido bicarbonato;Producto de Aseo liquido bicarbonato;7000;7000;PIEZA;NULL;5;True;30/03/2026 22:25;30/03/2026 22:25;2;2; 2.00 
+7.56782E+11;suavisante concentrad;Producto de Aseo suavisante concentrad;7000;7000;PIEZA;NULL;5;True;30/03/2026 22:25;30/03/2026 22:25;2;2; 2.00 
+7.7003E+12;suavisante D1;Producto de Aseo suavisante D1;6000;6000;PIEZA;NULL;5;True;30/03/2026 22:25;30/03/2026 22:25;2;2; 7.00 
+7.7003E+12;jabon barra D1 ;Producto de Aseo jabon barra D1 ;6500;6500;PIEZA;NULL;5;True;30/03/2026 22:25;30/03/2026 22:25;2;2; 2.00 
+7.7003E+12;fabuloso D1 ;Producto de Aseo fabuloso D1 ;4300;4300;PIEZA;NULL;5;True;30/03/2026 22:25;30/03/2026 22:25;2;2; 2.00 
+7.7003E+12;lavaloza 500ml;Producto de Aseo lavaloza 500ml;0;0;PIEZA;NULL;5;True;30/03/2026 22:25;30/03/2026 22:25;2;2; 5.00 
+7.7003E+12;lavaloza 750ml;Producto de Aseo lavaloza 750ml;7000;7000;PIEZA;NULL;5;True;30/03/2026 22:25;30/03/2026 22:25;2;2; 7.00 
+7.7003E+12;quitamanchas 1000ml;Producto de Aseo quitamanchas 1000ml;5000;5000;PIEZA;NULL;5;True;30/03/2026 22:25;30/03/2026 22:25;2;2; 4.00 
+7.7003E+12;quitamanchas blanco;Producto de Aseo quitamanchas blanco;6000;6000;PIEZA;NULL;5;True;30/03/2026 22:25;30/03/2026 22:25;2;2; 2.00 
+7.7003E+12;crema lavaloza ;Producto de Aseo crema lavaloza ;5800;5800;PIEZA;NULL;5;True;30/03/2026 22:25;30/03/2026 22:25;2;2; 2.00 
+7.70994E+12;lavalosa vinagre 1000;Producto de Aseo lavalosa vinagre 1000;8000;8000;PIEZA;NULL;5;True;30/03/2026 22:25;30/03/2026 22:25;2;2; 4.00 
+7.70994E+12;lavaloza vinagre 500;Producto de Aseo lavaloza vinagre 500;4500;4500;PIEZA;NULL;5;True;30/03/2026 22:25;30/03/2026 22:25;2;2; 5.00 
+7.70999E+12;jabon manos 500;Producto de Aseo jabon manos 500;4600;4600;PIEZA;NULL;5;True;30/03/2026 22:25;30/03/2026 22:25;2;2; 1.00 
+7.70201E+12;suavitel 430 ml;Producto de Aseo suavitel 430 ml;4600;4600;PIEZA;NULL;5;True;30/03/2026 22:25;30/03/2026 22:25;2;2; 10.00 
+7.50955E+12;suavitel 180ml;Producto de Aseo suavitel 180ml;2200;2200;PIEZA;NULL;5;True;30/03/2026 22:25;30/03/2026 22:25;2;2; 7.00 
+7.50955E+12;fabuloso 180ml;Producto de Aseo fabuloso 180ml;2200;2200;PIEZA;NULL;5;True;30/03/2026 22:25;30/03/2026 22:25;2;2; 2.00 
+7.70201E+12;colgate 22ml;Producto de Aseo colgate 22ml;2600;2600;PIEZA;NULL;5;True;30/03/2026 22:25;30/03/2026 22:25;2;2; 11.00 
+7.50955E+12;colgate 75ml;Producto de Aseo colgate 75ml;4600;4600;PIEZA;NULL;5;True;30/03/2026 22:25;30/03/2026 22:25;2;2; 4.00 
+7.50955E+12;colgate 100ml;Producto de Aseo colgate 100ml;10000;10000;PIEZA;NULL;5;True;30/03/2026 22:25;30/03/2026 22:25;2;2; 12.00 
+7.70217E+12;jabon rey ;Producto de Aseo jabon rey ;3200;3200;PIEZA;NULL;5;True;30/03/2026 22:25;30/03/2026 22:25;2;2; 18.00 
+7.50955E+12;axion disco 130g;Producto de Aseo axion disco 130g;2000;2000;PIEZA;NULL;5;True;30/03/2026 22:25;30/03/2026 22:25;2;2; 9.00 
+7.70201E+12;rexona ;Producto de Aseo rexona ;3500;3500;PIEZA;NULL;5;True;30/03/2026 22:25;30/03/2026 22:25;2;2; 7.00 
+7.70201E+12;protex;Producto de Aseo protex;4000;4000;PIEZA;NULL;5;True;30/03/2026 22:25;30/03/2026 22:25;2;2; 8.00 
+7.70203E+12;johnsons;Producto de Aseo johnsons;6000;6000;PIEZA;NULL;5;True;30/03/2026 22:25;30/03/2026 22:25;2;2; 12.00 
+7.89101E+12;ob tampones ;Producto de Aseo ob tampones ;8500;8500;PIEZA;NULL;5;True;30/03/2026 22:25;30/03/2026 22:25;2;2; 4.00 
+7.7003E+12;tampones D1;Producto de Aseo tampones D1;5300;5300;PIEZA;NULL;5;True;30/03/2026 22:25;30/03/2026 22:25;2;2; 4.00 
+7.7072E+12;elite papel ;Producto de Aseo elite papel ;2200;2200;PIEZA;NULL;5;True;30/03/2026 22:25;30/03/2026 22:25;2;2; 20.00 
+7.70212E+12;rosal papel ;Producto de Aseo rosal papel ;2500;2500;PIEZA;NULL;5;True;30/03/2026 22:25;30/03/2026 22:25;2;2; 20.00 
+7.7073E+12;arroz ;Productos Biberes arroz ;2500;2500;PIEZA;NULL;5;True;30/03/2026 22:25;30/03/2026 22:25;3;2; 40.00 
+7.70381E+12;sal;Productos Biberes sal;1600;1600;PIEZA;NULL;5;True;30/03/2026 22:25;30/03/2026 22:25;3;2; 15.00 
+7.71E+12;azucar ;Productos Biberes azucar ;2600;2600;PIEZA;NULL;5;True;30/03/2026 22:25;30/03/2026 22:25;3;2; 6.00 
+7.70973E+12;aceite 500ml;Productos Biberes aceite 500ml;5000;5000;PIEZA;NULL;5;True;30/03/2026 22:25;30/03/2026 22:25;3;2; 6.00 
+7.70973E+12;aceite 900ml;Productos Biberes aceite 900ml;9000;9000;PIEZA;NULL;5;True;30/03/2026 22:25;30/03/2026 22:25;3;2; 2.00 
+7.86211E+12;la espa��;Productos Biberes la espa��;7400;7400;PIEZA;NULL;5;True;30/03/2026 22:25;30/03/2026 22:25;3;2; 3.00 
+7.70939E+12;panela ;Productos Biberes panela ;4700;4700;PIEZA;NULL;5;True;30/03/2026 22:25;30/03/2026 22:25;3;2; 12.00 
+7.70213E+12;leche en polvo 200g;Productos Biberes leche en polvo 200g;8600;8600;PIEZA;NULL;5;True;30/03/2026 22:25;30/03/2026 22:25;3;2; 1.00 
+7.70213E+12;leche en polvo 380g;Productos Biberes leche en polvo 380g;15300;15300;PIEZA;NULL;5;True;30/03/2026 22:25;30/03/2026 22:25;3;2; 1.00 
+7.70201E+12;chocolate en pasta ;Productos Biberes chocolate en pasta ;1300;1300;PIEZA;NULL;5;True;30/03/2026 22:25;30/03/2026 22:25;3;2; 25.00 
+7.70271E+12;netre can;Productos Biberes netre can;5700;5700;PIEZA;NULL;5;True;30/03/2026 22:25;30/03/2026 22:25;3;2; 7.00 
+7.70309E+12;ringo;Productos Biberes ringo;5800;5800;PIEZA;NULL;5;True;30/03/2026 22:25;30/03/2026 22:25;3;2; 7.00 
+7.70309E+12;mirringo;Productos Biberes mirringo;5700;5700;PIEZA;NULL;5;True;30/03/2026 22:25;30/03/2026 22:25;3;2; 10.00 
+7.70202E+12;milo 20g;Productos Biberes milo 20g;1000;1000;PIEZA;NULL;5;True;30/03/2026 22:25;30/03/2026 22:25;3;2; 9.00 
+7.70213E+12;leche en polvo 25g;Productos Biberes leche en polvo 25g;2000;2000;PIEZA;NULL;5;True;30/03/2026 22:25;30/03/2026 22:25;3;2; 9.00 
+7.70202E+12;caldo magui;Productos Biberes caldo magui;600;600;PIEZA;NULL;5;True;30/03/2026 22:25;30/03/2026 22:25;3;2; 16.00 
+7.70202E+12;caf����;Productos Biberes caf����;400;400;PIEZA;NULL;5;True;30/03/2026 22:25;30/03/2026 22:25;3;2; 25.00 
+7.702E+12;malta 330;7702004013484 malta 330;3000;3000;PIEZA;NULL;5;True;30/03/2026 22:25;30/03/2026 22:25;4;2; 15.00 
+7.70898E+12;pool 600ml;7708984708709 pool 600ml;2000;2000;PIEZA;NULL;5;True;30/03/2026 22:25;30/03/2026 22:25;4;2; 15.00 
+7.70209E+12;postobon acqua ;7702090069495 postobon acqua ;2500;2500;PIEZA;NULL;5;True;30/03/2026 22:25;30/03/2026 22:25;4;2; 10.00 
+77035684;cocacola 250ml;77035684 cocacola 250ml;2300;2300;PIEZA;NULL;5;True;30/03/2026 22:25;30/03/2026 22:25;4;2; 10.00 
+7.70724E+12;cifrut 250ml;7707244561825 cifrut 250ml;1500;1500;PIEZA;NULL;5;True;30/03/2026 22:25;30/03/2026 22:25;4;2; 15.00 
+7.702E+12;malta 200;7702004013668 malta 200;2000;2000;PIEZA;NULL;5;True;30/03/2026 22:25;30/03/2026 22:25;4;2; 15.00 
+7.70209E+12;postobon 250ml;7702090032604 postobon 250ml;2000;2000;PIEZA;NULL;5;True;30/03/2026 22:25;30/03/2026 22:25;4;2; 15.00 
+7.70219E+12;pepsi 400 ml;7702192741749 pepsi 400 ml;3000;3000;PIEZA;NULL;5;True;30/03/2026 22:25;30/03/2026 22:25;4;2; 5.00 
+7.70724E+12;cifrut 400 ml;7707244560347 cifrut 400 ml;2000;2000;PIEZA;NULL;5;True;30/03/2026 22:25;30/03/2026 22:25;4;2; 10.00 
+7.70724E+12; big cola 400ml;7707244562044  big cola 400ml;1500;1500;PIEZA;NULL;5;True;30/03/2026 22:25;30/03/2026 22:25;4;2; 13.00 
+7.70724E+12;agua 300 ml;7707244566233 agua 300 ml;1000;1000;PIEZA;NULL;5;True;30/03/2026 22:25;30/03/2026 22:25;4;2; 10.00 
+7.70219E+12;gatorade 500ml;7702192736455 gatorade 500ml;4000;4000;PIEZA;NULL;5;True;30/03/2026 22:25;30/03/2026 22:25;4;2; 10.00 
+7.70254E+12;cocacola 1.5l;7702535024423 cocacola 1.5l;6500;6500;PIEZA;NULL;5;True;30/03/2026 22:25;30/03/2026 22:25;4;2; 5.00 
+7.70851E+12;big cola 1.75l;7708507552666 big cola 1.75l;4500;4500;PIEZA;NULL;5;True;30/03/2026 22:25;30/03/2026 22:25;4;2; 5.00 
+7.71E+12;cifrut 1.7l;7709997015198 cifrut 1.7l;4500;4500;PIEZA;NULL;5;True;30/03/2026 22:25;30/03/2026 22:25;4;2; 5.00 
+7.70219E+12;gaseosa 2.5 l;7702192107675 gaseosa 2.5 l;6000;6000;PIEZA;NULL;5;True;30/03/2026 22:25;30/03/2026 22:25;4;2; 10.00 
+7.70254E+12;quatro 1.5l;7702535011706 quatro 1.5l;5000;5000;PIEZA;NULL;5;True;30/03/2026 22:25;30/03/2026 22:25;4;2; 7.00 
+7.70713E+12;hit caja ;7707133042039 hit caja ;2000;2000;PIEZA;NULL;5;True;30/03/2026 22:25;30/03/2026 22:25;4;2; 15.00 

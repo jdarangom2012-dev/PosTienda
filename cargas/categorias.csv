@@ -1,0 +1,5 @@
+"id","nombre","descripcion","activa","created_at","tienda_id"
+"1","Bebidas","Bebidas Gaseosas",True,"2026-03-04 19:29:14.126225-05","1"
+"2","Papeleria","Productos de Papeleria",True,"2026-03-09 20:46:37.873085-05","1"
+"4","Aseo","Productos de Aseo",True,"2026-03-29 18:35:14.126225-05","1"
+"5","Biberes","Productos biberes",True,"2026-03-29 18:37:14.126225-05","1"

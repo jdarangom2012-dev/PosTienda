@@ -9,6 +9,7 @@ export default function ModalProducto({ producto, onGuardado, onCerrar }) {
   const [categorias, setCategorias] = useState([])
   const [guardando,  setGuardando]  = useState(false)
   const [error,      setError]      = useState('')
+  const [showCategorias, setShowCategorias] = useState(false)
   const [form, setForm] = useState({
     nombre:        '',
     codigo_barras: '',
@@ -114,33 +115,70 @@ export default function ModalProducto({ producto, onGuardado, onCerrar }) {
                    placeholder="Ej: Coca Cola 350ml"
                    className="input-pos w-full px-4 py-3 rounded-xl text-sm" />
           </div>
-
-          {/* Código + Categoría */}
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="block text-xs font-semibold mb-1.5 tracking-widest uppercase"
-                     style={{ color: 'rgba(196,181,253,0.6)' }}>
-                Código de barras
-              </label>
-              <input name="codigo_barras" value={form.codigo_barras} onChange={handleChange}
-                     placeholder="7501055..."
-                     className="input-pos w-full px-4 py-3 rounded-xl text-sm" />
-            </div>
-            <div>
-              <label className="block text-xs font-semibold mb-1.5 tracking-widest uppercase"
-                     style={{ color: 'rgba(196,181,253,0.6)' }}>
-                Categoría
-              </label>
-              <select name="categoria" value={form.categoria} onChange={handleChange}
-                      className="input-pos w-full px-4 py-3 rounded-xl text-sm">
-                <option value="">Sin categoría</option>
-                {categorias.map(c => (
-                  <option key={c.id} value={c.id}>{c.nombre}</option>
-                ))}
-              </select>
-            </div>
+         {/* Código + Categoría */}
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className="block text-xs font-semibold mb-1.5 tracking-widest uppercase"
+                  style={{ color: 'rgba(196,181,253,0.6)' }}>
+              Código de barras
+            </label>
+            <input name="codigo_barras" value={form.codigo_barras} onChange={handleChange}
+                  placeholder="7501055..."
+                  className="input-pos w-full px-4 py-3 rounded-xl text-sm" />
           </div>
 
+          {/* Categoría — dropdown personalizado */}
+          <div className="relative">
+            <label className="block text-xs font-semibold mb-1.5 tracking-widest uppercase"
+                  style={{ color: 'rgba(196,181,253,0.6)' }}>
+              Categoría
+            </label>
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => setShowCategorias(!showCategorias)}
+                className="w-full px-4 py-3 rounded-xl text-sm text-left flex items-center justify-between"
+                style={{
+                  background: '#1e1b4b',
+                  color: '#e2e8f0',
+                  border: '1px solid rgba(139,92,246,0.2)',
+                }}>
+                <span>
+                  {form.categoria
+                    ? categorias.find(c => c.id == form.categoria)?.nombre || 'Sin categoría'
+                    : 'Sin categoría'}
+                </span>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+                    stroke="#a78bfa" strokeWidth="2">
+                  <polyline points="6 9 12 15 18 9"/>
+                </svg>
+              </button>
+
+              {showCategorias && (
+                <div className="absolute z-50 w-full mt-1 rounded-xl overflow-hidden"
+                    style={{
+                      background: '#1e1b4b',
+                      border: '1px solid rgba(139,92,246,0.2)',
+                      boxShadow: '0 8px 24px rgba(0,0,0,0.4)',
+                    }}>
+                  <div onClick={() => { setForm(p => ({...p, categoria: ''})); setShowCategorias(false) }}
+                      className="px-4 py-2.5 text-sm cursor-pointer hover:bg-purple-900"
+                      style={{ color: '#e2e8f0' }}>
+                    Sin categoría
+                  </div>
+                  {categorias.map(c => (
+                    <div key={c.id}
+                        onClick={() => { setForm(p => ({...p, categoria: c.id})); setShowCategorias(false) }}
+                        className="px-4 py-2.5 text-sm cursor-pointer hover:bg-purple-900"
+                        style={{ color: '#e2e8f0' }}>
+                      {c.nombre}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
           {/* Precios */}
           <div className="grid grid-cols-2 gap-3">
             <div>

@@ -23,12 +23,13 @@ class InventarioSerializer(serializers.ModelSerializer):
     producto_nombre  = serializers.CharField(source='producto.nombre',       read_only=True)
     producto_codigo  = serializers.CharField(source='producto.codigo_barras', read_only=True)
     stock_minimo     = serializers.IntegerField(source='producto.stock_minimo', read_only=True)
+    categoria_nombre = serializers.CharField(source='producto.categoria.nombre',   read_only=True)  # ← AGREGAR
     bajo_minimo      = serializers.SerializerMethodField()
 
     class Meta:
         model  = Inventario
         fields = (
-            'id', 'producto', 'producto_nombre', 'producto_codigo',
+            'id', 'producto', 'producto_nombre', 'producto_codigo', 'categoria_nombre',
             'cantidad_actual', 'stock_minimo', 'bajo_minimo', 'updated_at'
         )
         read_only_fields = ('id', 'updated_at')
@@ -105,3 +106,13 @@ class AjusteInventarioSerializer(serializers.Serializer):
         except Producto.DoesNotExist:
             raise serializers.ValidationError("Producto no encontrado o inactivo.")
         return value
+
+class CrearMovimientoSerializer(serializers.ModelSerializer):
+    producto_id = serializers.IntegerField()  # ← recibe producto_id
+
+    class Meta:
+        model  = MovimientoInventario
+        fields = (
+            'producto_id', 'tipo_movimiento', 'cantidad', 'motivo',
+            'referencia_id', 'referencia_tipo'
+        )
