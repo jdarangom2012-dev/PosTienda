@@ -29,7 +29,7 @@ class InventarioSerializer(serializers.ModelSerializer):
     class Meta:
         model  = Inventario
         fields = (
-            'id', 'producto', 'producto_nombre', 'producto_codigo', 'categoria_nombre',
+            'id', 'producto', 'producto_id', 'producto_nombre', 'producto_codigo', 'categoria_nombre',
             'cantidad_actual', 'stock_minimo', 'bajo_minimo', 'updated_at'
         )
         read_only_fields = ('id', 'updated_at')
@@ -39,9 +39,6 @@ class InventarioSerializer(serializers.ModelSerializer):
 
 
 class MovimientoInventarioSerializer(serializers.ModelSerializer):
-    """
-    Serializer para leer movimientos de inventario.
-    """
     producto_nombre  = serializers.CharField(source='producto.nombre',   read_only=True)
     usuario_nombre   = serializers.CharField(source='usuario.username',  read_only=True)
     tipo_display     = serializers.CharField(source='get_tipo_movimiento_display', read_only=True)
@@ -55,8 +52,10 @@ class MovimientoInventarioSerializer(serializers.ModelSerializer):
             'referencia_id', 'referencia_tipo',
             'motivo', 'usuario', 'usuario_nombre', 'created_at'
         )
-        read_only_fields = '__all__'
-
+        read_only_fields = (   # ← cambiar de '__all__' a tupla
+            'id', 'producto_nombre', 'usuario_nombre',
+            'tipo_display', 'stock_anterior', 'stock_nuevo', 'created_at'
+        )
 
 class EntradaMercanciaSerializer(serializers.Serializer):
     """

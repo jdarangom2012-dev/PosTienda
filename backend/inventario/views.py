@@ -87,19 +87,21 @@ class MovimientoViewSet(TiendaMixin, viewsets.ModelViewSet):
 
     @transaction.atomic
     def perform_create(self, serializer):
-        tienda     = self.get_tienda()
+        tienda      = self.get_tienda()
         producto_id = serializer.validated_data['producto_id']
         producto    = Producto.objects.get(id=producto_id)
-        tipo       = serializer.validated_data['tipo_movimiento']
-        cantidad   = serializer.validated_data['cantidad']
+        tipo        = serializer.validated_data['tipo_movimiento']
+        cantidad    = serializer.validated_data['cantidad']
 
         inventario     = Inventario.objects.select_for_update().get(
             producto=producto, tienda=tienda
         )
         stock_anterior = inventario.cantidad_actual
 
-        if tipo == 'AJUSTE':
+        if tipo == 'AJUSTE_POS':
             stock_nuevo = cantidad
+        elif tipo == 'AJUSTE_NEG':
+            stock_nuevo = stock_anterior - cantidad
         elif tipo == 'SALIDA':
             if cantidad > stock_anterior:
                 from rest_framework.exceptions import ValidationError
@@ -184,24 +186,30 @@ class AjusteInventarioView(APIView):
 
     @transaction.atomic
     def perform_create(self, serializer):
+        print("=== MOVIMIENTOVIEWSET PERFORM_CREATE ===")
+        print("tipo:", serializer.validated_data.get('tipo_movimiento'))
+        print("cantidad:", serializer.validated_data.get('cantidad'))
         tienda      = self.get_tienda()
         producto_id = serializer.validated_data['producto_id']
+        producto    = Producto.objects.get(id=producto_id)
         tipo        = serializer.validated_data['tipo_movimiento']
         cantidad    = serializer.validated_data['cantidad']
-
-        producto = Producto.objects.get(id=producto_id)
 
         inventario     = Inventario.objects.select_for_update().get(
             producto=producto, tienda=tienda
         )
         stock_anterior = inventario.cantidad_actual
 
-        if tipo == 'AJUSTE':
+        if tipo == 'AJUSTE_POS':          # ← CORREGIDO
             stock_nuevo = cantidad
+        elif tipo == 'AJUSTE_NEG':        # ← AGREGADO
+            stock_nuevo = stock_anterior - cantidad
         elif tipo == 'SALIDA':
             if cantidad > stock_anterior:
                 from rest_framework.exceptions import ValidationError
-                raise ValidationError(f'Stock insuficiente. Disponible: {stock_anterior}')
+                raise ValidationError(
+                    f'Stock insuficiente. Disponible: {stock_anterior}'
+                )
             stock_nuevo = stock_anterior - cantidad
         else:
             stock_nuevo = stock_anterior + cantidad

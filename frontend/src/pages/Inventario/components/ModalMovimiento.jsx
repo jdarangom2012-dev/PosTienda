@@ -5,9 +5,10 @@ import { useState } from 'react'
 import { inventarioService } from '../../../services/api'
 
 const TIPOS = [
-  { value: 'ENTRADA',   label: '↑ Entrada de mercancía',  color: '#4ade80' },
-  { value: 'AJUSTE',    label: '⚡ Ajuste de inventario', color: '#fbbf24' },
-  { value: 'DEVOLUCION',label: '↩ Devolución',            color: '#06b6d4' },
+  { value: 'ENTRADA',    label: '↑ Entrada de mercancía',  color: '#4ade80' },
+  { value: 'AJUSTE_POS', label: '⚡ Ajuste positivo',      color: '#fbbf24' },
+  { value: 'AJUSTE_NEG', label: '↓ Ajuste negativo',       color: '#f87171' },
+  { value: 'DEVOLUCION', label: '↩ Devolución',            color: '#06b6d4' },
 ]
 
 export default function ModalMovimiento({ inventario, onGuardado, onCerrar }) {
@@ -21,11 +22,11 @@ export default function ModalMovimiento({ inventario, onGuardado, onCerrar }) {
 
   const stockActual = parseFloat(inventario?.cantidad_actual) || 0
   const cantidad    = parseFloat(form.cantidad) || 0
-  const preview     = form.tipo_movimiento === 'SALIDA'
+  const preview = form.tipo_movimiento === 'SALIDA' || form.tipo_movimiento === 'AJUSTE_NEG'
     ? stockActual - cantidad
-    : form.tipo_movimiento === 'AJUSTE'
-      ? cantidad
-      : stockActual + cantidad
+    : form.tipo_movimiento === 'AJUSTE_POS'
+    ? cantidad
+    : stockActual + cantidad
 
   const handleGuardar = async () => {
     if (!form.cantidad || cantidad <= 0) {
