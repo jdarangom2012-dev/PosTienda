@@ -161,7 +161,7 @@ class CambiarPasswordView(APIView):
 
 
 # ── Usuarios (CRUD por tienda) ────────────────────────────────
-class UsuarioViewSet(viewsets.ModelViewSet):  # ← quitar TiendaMixin
+class UsuarioViewSet(viewsets.ModelViewSet):
     queryset           = Usuario.objects.all().order_by('id')
     serializer_class   = UsuarioSerializer
     permission_classes = [IsAuthenticated]
@@ -175,17 +175,31 @@ class UsuarioViewSet(viewsets.ModelViewSet):  # ← quitar TiendaMixin
         
         if user.es_superadmin:
             qs = qs.exclude(rol='SUPERADMIN')
-       
         else:
             tienda = getattr(self.request, 'tienda', None)
-       
             qs = qs.filter(tienda=tienda).exclude(rol='SUPERADMIN') if tienda else qs.none()
 
         if rol:
             qs = qs.filter(rol=rol)
-       
-
         return qs
+
+    def get_serializer_class(self):
+        if self.action == 'create':
+            return UsuarioCrearSerializer
+        return UsuarioSerializer
+
+    def get_permissions(self):
+        return [IsAuthenticated()]
+
+    def perform_create(self, serializer):
+        user      = self.request.user
+        tienda_id = self.request.data.get('tienda')
+        if user.es_superadmin:
+            tienda = Tienda.objects.get(id=tienda_id) if tienda_id else None
+            serializer.save(tienda=tienda)
+        else:
+            raise PermissionDenied('Solo el Superadmin puede crear usuarios.')
+        
     def get_serializer_class(self):
         if self.action == 'create':
             return UsuarioCrearSerializer

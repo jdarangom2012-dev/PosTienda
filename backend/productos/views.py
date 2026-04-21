@@ -61,8 +61,29 @@ class ProductoViewSet(TiendaMixin, viewsets.ModelViewSet):
         return qs
 
     def perform_create(self, serializer):
-        """Al crear producto crea automáticamente su inventario."""
         tienda   = self.get_tienda()
+        
+        # ── Generar código interno si no tiene código de barras ──
+        codigo = self.request.data.get('codigo_barras', '').strip()
+        if not codigo:
+            # Buscar el último código interno de la tienda
+            ultimo = Producto.objects.filter(
+                tienda=tienda,
+                codigo_barras__startswith='INT-'
+            ).order_by('-codigo_barras').first()
+            
+            if ultimo and ultimo.codigo_barras:
+                try:
+                    num = int(ultimo.codigo_barras.replace('INT-', '')) + 1
+                except:
+                    num = 1
+            else:
+                num = 1
+            
+            codigo_interno = f'INT-{num:04d}'
+            serializer.validated_data['codigo_barras'] = codigo_interno
+        # ─────────────────────────────────────────────────────────
+
         producto = serializer.save(tienda=tienda)
         Inventario.objects.get_or_create(
             producto=producto,

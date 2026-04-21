@@ -1,27 +1,40 @@
-// ============================================================
-// 3. src/pages/POS/components/ModalPago.jsx
-// ============================================================
 import { useState, useEffect } from 'react'
 import { ventasService } from '../../../services/api'
 
 export default function ModalPago({ total, carrito, onExito, onCerrar }) {
-  const [formasPago,    setFormasPago]    = useState([])
-  const [formaPagoId,   setFormaPagoId]   = useState(null)
-  const [montoPagado,   setMontoPagado]   = useState('')
-  const [procesando,    setProcesando]    = useState(false)
-  const [error,         setError]         = useState('')
+  const [formasPago,  setFormasPago]  = useState([])
+  const [formaPagoId, setFormaPagoId] = useState(null)
+  const [formaPago,   setFormaPago]   = useState(null)
+  const [montoPagado, setMontoPagado] = useState('')
+  const [procesando,  setProcesando]  = useState(false)
+  const [error,       setError]       = useState('')
 
   useEffect(() => {
     ventasService.formasPago().then(({ data }) => {
       setFormasPago(data)
-      if (data.length > 0) setFormaPagoId(data[0].id)
+      if (data.length > 0) {
+        setFormaPagoId(data[0].id)
+        setFormaPago(data[0])
+      }
     })
     setMontoPagado(total.toString())
   }, [total])
 
-  const monto   = parseFloat(montoPagado) || 0
-  const cambio  = monto - total
-  const valido  = formaPagoId && monto >= total
+  // Detectar si es efectivo
+  const esEfectivo = formaPago?.nombre?.toLowerCase().includes('efectivo')
+
+  const monto  = parseFloat(montoPagado) || 0
+  const cambio = esEfectivo ? monto - total : 0
+  const valido = formaPagoId && (esEfectivo ? monto >= total : true)
+
+  const seleccionarForma = (fp) => {
+    setFormaPagoId(fp.id)
+    setFormaPago(fp)
+    // Si no es efectivo, fijar el monto exacto
+    if (!fp.nombre?.toLowerCase().includes('efectivo')) {
+      setMontoPagado(total.toString())
+    }
+  }
 
   const procesar = async () => {
     if (!valido) return
@@ -36,10 +49,23 @@ export default function ModalPago({ total, carrito, onExito, onCerrar }) {
         })),
         pagos: [{
           forma_pago_id: formaPagoId,
-          monto:         monto,
+          monto:         total,
         }],
       }
       const { data } = await ventasService.procesar(payload)
+      
+      // ── Abrir cajón de dinero ──────────────────────────
+      try {
+        await fetch('http://localhost:8765/abrir-cajon', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+        })
+      } catch {
+        // Si el cajón falla no interrumpimos la venta
+        console.warn('CajonPOS no disponible')
+      }
+      // ───────────────────────────────────────────────────
+
       onExito(data, cambio)
     } catch (err) {
       const msg = err.response?.data?.detalle
@@ -65,8 +91,7 @@ export default function ModalPago({ total, carrito, onExito, onCerrar }) {
             Procesar Pago
           </h2>
           <button onClick={onCerrar}
-                  className="w-8 h-8 rounded-xl flex items-center justify-center
-                             transition-all hover:scale-110"
+                  className="w-8 h-8 rounded-xl flex items-center justify-center transition-all hover:scale-110"
                   style={{ background: 'rgba(239,68,68,0.1)', color: '#f87171' }}>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
                  stroke="currentColor" strokeWidth="2.5">
@@ -98,7 +123,7 @@ export default function ModalPago({ total, carrito, onExito, onCerrar }) {
             {formasPago.map(fp => (
               <button
                 key={fp.id}
-                onClick={() => setFormaPagoId(fp.id)}
+                onClick={() => seleccionarForma(fp)}
                 className="py-3 px-4 rounded-xl text-sm font-semibold transition-all"
                 style={formaPagoId === fp.id ? {
                   background: 'linear-gradient(135deg, #7c3aed, #a855f7)',
@@ -115,30 +140,51 @@ export default function ModalPago({ total, carrito, onExito, onCerrar }) {
           </div>
         </div>
 
-        {/* Monto recibido */}
-        <div className="mb-4">
-          <p className="text-xs font-semibold mb-2 tracking-widest uppercase"
-             style={{ color: 'rgba(196,181,253,0.6)' }}>
-            Monto Recibido
-          </p>
-          <input
-            type="number"
-            value={montoPagado}
-            onChange={e => setMontoPagado(e.target.value)}
-            className="input-pos w-full px-4 py-3.5 rounded-xl text-lg font-bold text-center"
-            min={total}
-          />
-        </div>
+        {/* Monto recibido — solo efectivo */}
+        {esEfectivo && (
+          <div className="mb-4">
+            <p className="text-xs font-semibold mb-2 tracking-widest uppercase"
+               style={{ color: 'rgba(196,181,253,0.6)' }}>
+              Monto Recibido
+            </p>
+            <input
+              type="number"
+              value={montoPagado}
+              onChange={e => setMontoPagado(e.target.value)}
+              className="input-pos w-full px-4 py-3.5 rounded-xl text-lg font-bold text-center"
+              min={total}
+            />
+          </div>
+        )}
 
-        {/* Cambio */}
-        {cambio > 0 && (
+        {/* Devolución — solo efectivo y cuando hay cambio */}
+        {esEfectivo && (
           <div className="flex items-center justify-between px-4 py-3 rounded-xl mb-4"
-               style={{ background: 'rgba(74,222,128,0.1)', border: '1px solid rgba(74,222,128,0.2)' }}>
-            <span className="text-sm font-semibold" style={{ color: '#4ade80' }}>
-              Cambio a devolver
+               style={{
+                 background: cambio > 0 ? 'rgba(74,222,128,0.1)' : 'rgba(139,92,246,0.06)',
+                 border: `1px solid ${cambio > 0 ? 'rgba(74,222,128,0.2)' : 'rgba(139,92,246,0.1)'}`,
+               }}>
+            <span className="text-sm font-semibold"
+                  style={{ color: cambio > 0 ? '#4ade80' : 'rgba(196,181,253,0.4)' }}>
+              Devolución
             </span>
-            <span className="text-xl font-black" style={{ color: '#4ade80' }}>
-              ${cambio.toLocaleString('es-CO')}
+            <span className="text-xl font-black"
+                  style={{
+                    color: cambio > 0 ? '#4ade80' : 'rgba(196,181,253,0.3)',
+                    fontFamily: 'Syne, sans-serif'
+                  }}>
+              ${cambio > 0 ? cambio.toLocaleString('es-CO') : '0'}
+            </span>
+          </div>
+        )}
+
+        {/* Aviso pago digital */}
+        {!esEfectivo && formaPago && (
+          <div className="flex items-center gap-3 px-4 py-3 rounded-xl mb-4"
+               style={{ background: 'rgba(6,182,212,0.08)', border: '1px solid rgba(6,182,212,0.2)' }}>
+            <span style={{ color: '#06b6d4' }}>💳</span>
+            <span className="text-sm" style={{ color: 'rgba(196,181,253,0.7)' }}>
+              Pago exacto por <strong style={{ color: '#06b6d4' }}>{formaPago.nombre}</strong> — no requiere devolución
             </span>
           </div>
         )}
@@ -164,8 +210,7 @@ export default function ModalPago({ total, carrito, onExito, onCerrar }) {
           style={{ fontFamily: 'Syne, sans-serif' }}>
           {procesando ? (
             <span className="flex items-center justify-center gap-2">
-              <span className="w-5 h-5 border-2 border-white border-t-transparent
-                               rounded-full animate-spin" />
+              <span className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
               Procesando...
             </span>
           ) : (
@@ -178,6 +223,7 @@ export default function ModalPago({ total, carrito, onExito, onCerrar }) {
             </span>
           )}
         </button>
+
       </div>
     </div>
   )

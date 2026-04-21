@@ -1,0 +1,8 @@
+{
+    "puerto_com": "COM3",
+    "baudrate": 9600,
+    "servidor_puerto": 8765,
+    "servidor_host": "localhost",
+    "log_ruta": "D:\\Obras\\PosTienda\\backend\\CajonPOS\\logs\\cajon.log",
+    "timeout": 3
+}

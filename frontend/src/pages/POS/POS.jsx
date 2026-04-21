@@ -76,7 +76,7 @@ export default function POS() {
       <div className="flex-1 flex flex-col gap-4 min-w-0">
 
         {/* Buscador */}
-       <div className="glass rounded-2xl p-4" style={{ overflow: 'visible', position: 'relative', zIndex: 100 }}>
+       <div className="glass rounded-2xl p-4" style={{ overflow: 'visible', position: 'relative', zIndex: 10 }}>
           <BuscadorProducto onAgregar={agregarProducto} />
         </div>
 

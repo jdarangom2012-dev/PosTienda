@@ -1,0 +1,56 @@
+2026-04-19 20:32:38,587 [INFO] ==================================================
+2026-04-19 20:32:38,587 [INFO] 🚀 CajonPOS iniciando...
+2026-04-19 20:32:38,587 [INFO]    Puerto COM:     COM3
+2026-04-19 20:32:38,587 [INFO]    Servidor:       http://localhost:8765
+2026-04-19 20:32:38,589 [INFO]    Log:            D:\Obras\PosTienda\backend\CajonPOS\logs\cajon.log
+2026-04-19 20:32:38,589 [INFO] ==================================================
+2026-04-19 20:32:38,589 [INFO] Puertos COM disponibles:
+2026-04-19 20:32:38,589 [INFO]    COM3 — Serie estándar sobre el vínculo Bluetooth (COM3)
+2026-04-19 20:32:38,589 [INFO]    COM4 — Serie estándar sobre el vínculo Bluetooth (COM4)
+2026-04-19 20:32:38,609 [INFO] [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://localhost:8765
+2026-04-19 20:32:38,610 [INFO] [33mPress CTRL+C to quit[0m
+2026-04-19 20:33:57,088 [INFO] 🏓 Ping recibido
+2026-04-19 20:33:57,088 [INFO] 127.0.0.1 - - [19/Apr/2026 20:33:57] "GET /ping HTTP/1.1" 200 -
+2026-04-19 20:34:40,808 [INFO] 📋 Puertos disponibles consultados: ['COM3', 'COM4']
+2026-04-19 20:34:40,811 [INFO] 127.0.0.1 - - [19/Apr/2026 20:34:40] "GET /puertos HTTP/1.1" 200 -
+2026-04-19 20:35:27,549 [INFO] 🏓 Ping recibido
+2026-04-19 20:35:27,551 [INFO] 127.0.0.1 - - [19/Apr/2026 20:35:27] "GET /ping HTTP/1.1" 200 -
+2026-04-19 20:44:36,597 [INFO] ==================================================
+2026-04-19 20:44:36,597 [INFO] 🚀 CajonPOS iniciando...
+2026-04-19 20:44:36,598 [INFO]    Puerto COM:     COM3
+2026-04-19 20:44:36,598 [INFO]    Servidor:       http://localhost:8765
+2026-04-19 20:44:36,598 [INFO]    Log:            D:\Obras\PosTienda\backend\CajonPOS\logs\cajon.log
+2026-04-19 20:44:36,598 [INFO] ==================================================
+2026-04-19 20:44:36,603 [INFO] Puertos COM disponibles:
+2026-04-19 20:44:36,603 [INFO]    COM3 — Serie estándar sobre el vínculo Bluetooth (COM3)
+2026-04-19 20:44:36,603 [INFO]    COM4 — Serie estándar sobre el vínculo Bluetooth (COM4)
+2026-04-19 20:44:36,609 [INFO] [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://localhost:8765
+2026-04-19 20:44:36,609 [INFO] [33mPress CTRL+C to quit[0m
+2026-04-19 20:44:42,244 [INFO] ==================================================
+2026-04-19 20:44:42,244 [INFO] 🚀 CajonPOS iniciando...
+2026-04-19 20:44:42,244 [INFO]    Puerto COM:     COM3
+2026-04-19 20:44:42,244 [INFO]    Servidor:       http://localhost:8765
+2026-04-19 20:44:42,244 [INFO]    Log:            D:\Obras\PosTienda\backend\CajonPOS\logs\cajon.log
+2026-04-19 20:44:42,244 [INFO] ==================================================
+2026-04-19 20:44:42,244 [INFO] Puertos COM disponibles:
+2026-04-19 20:44:42,244 [INFO]    COM3 — Serie estándar sobre el vínculo Bluetooth (COM3)
+2026-04-19 20:44:42,244 [INFO]    COM4 — Serie estándar sobre el vínculo Bluetooth (COM4)
+2026-04-19 20:44:42,265 [INFO] [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://localhost:8765
+2026-04-19 20:44:42,265 [INFO] [33mPress CTRL+C to quit[0m
+2026-04-19 20:44:51,917 [INFO] 🏓 Ping recibido
+2026-04-19 20:44:51,918 [INFO] 127.0.0.1 - - [19/Apr/2026 20:44:51] "GET /ping HTTP/1.1" 200 -
+2026-04-19 20:44:52,275 [INFO] ==================================================
+2026-04-19 20:44:52,275 [INFO] 🚀 CajonPOS iniciando...
+2026-04-19 20:44:52,275 [INFO]    Puerto COM:     COM3
+2026-04-19 20:44:52,275 [INFO]    Servidor:       http://localhost:8765
+2026-04-19 20:44:52,275 [INFO]    Log:            D:\Obras\PosTienda\backend\CajonPOS\logs\cajon.log
+2026-04-19 20:44:52,275 [INFO] ==================================================
+2026-04-19 20:44:52,275 [INFO] Puertos COM disponibles:
+2026-04-19 20:44:52,275 [INFO]    COM3 — Serie estándar sobre el vínculo Bluetooth (COM3)
+2026-04-19 20:44:52,275 [INFO]    COM4 — Serie estándar sobre el vínculo Bluetooth (COM4)
+2026-04-19 20:44:52,297 [INFO] [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://localhost:8765
+2026-04-19 20:44:52,297 [INFO] [33mPress CTRL+C to quit[0m
