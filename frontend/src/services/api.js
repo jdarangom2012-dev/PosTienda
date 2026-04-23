@@ -43,16 +43,39 @@ api.interceptors.response.use(
         original.headers.Authorization = `Bearer ${data.access}`
         return api(original)
       } catch {
-        // Refresh falló — limpiar sesión
+        // Refresh falló — limpiar sesión y redirigir
         localStorage.removeItem('access_token')
         localStorage.removeItem('refresh_token')
         localStorage.removeItem('usuario')
         window.location.href = '/login'
+        return Promise.reject(error)
       }
     }
     return Promise.reject(error)
   }
 )
+
+// ── Auto-logout por inactividad (8 horas) ────────────────────
+const TIEMPO_INACTIVIDAD = 10 * 60 * 60 * 1000 // 8 horas en ms
+let timerInactividad = null
+
+const resetTimer = () => {
+  if (timerInactividad) clearTimeout(timerInactividad)
+  timerInactividad = setTimeout(() => {
+    localStorage.removeItem('access_token')
+    localStorage.removeItem('refresh_token')
+    localStorage.removeItem('usuario')
+    window.location.href = '/login'
+  }, TIEMPO_INACTIVIDAD)
+}
+
+// Detectar actividad del usuario
+if (typeof window !== 'undefined') {
+  ['click', 'keydown', 'mousemove', 'scroll', 'touchstart'].forEach(event => {
+    window.addEventListener(event, resetTimer, { passive: true })
+  })
+  resetTimer() // Iniciar el timer al cargar
+}
 
 export default api
 
