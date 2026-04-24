@@ -14,6 +14,7 @@ import Reportes      from './pages/Reportes/Reportes'
 import Usuarios      from './pages/Usuarios/Usuarios'
 import Categorias from './pages/Productos/components/Categorias'
 import SuperAdmin from './pages/SuperAdmin/SuperAdmin'
+import Creditos from './pages/Creditos/Creditos'
 
 
 
@@ -31,6 +32,7 @@ export default function App() {
             <Route path="/reportes"   element={<Reportes />} />
             <Route path="/usuarios"   element={<Usuarios />} />
             <Route path="/categorias" element={<Categorias />} />
+            <Route path="/creditos"   element={<Creditos />} /> 
           </Route>
           <Route path="/"  element={<Navigate to="/dashboard" replace />} />
           <Route path="*"  element={<Navigate to="/dashboard" replace />} />

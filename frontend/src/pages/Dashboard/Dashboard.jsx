@@ -2,7 +2,7 @@
 // 8. src/pages/Dashboard/Dashboard.jsx
 // ============================================================
 import { useEffect, useState } from 'react'
-import { ventasService, inventarioService } from '../../services/api'
+import { ventasService, inventarioService, creditosService } from '../../services/api'
 import StatCard      from './components/StatCard'
 import VentasChart   from './components/VentasChart'
 import AlertasStock  from './components/AlertasStock'
@@ -14,21 +14,24 @@ export default function Dashboard() {
   const [alertas,  setAlertas]  = useState([])
   const [ventasHoy, setVentasHoy] = useState([])
   const [loading,  setLoading]  = useState(true)
+  const [cartera, setCartera] = useState(null)
 
   useEffect(() => {
     const cargar = async () => {
       setLoading(true)
       try {
-        const [r, s, a, v] = await Promise.all([
+        const [r, s, a, v, c] = await Promise.all([
           ventasService.resumenHoy(),
           ventasService.resumenSemana(),
           inventarioService.alertas(),
           ventasService.hoy(),
+          creditosService.resumen(),
         ])
         setResumen(r.data)
         setSemana(s.data.detalle || [])
         setAlertas(a.data.productos || [])
         setVentasHoy(v.data || [])
+        setCartera(c.data)
       } catch (err) {
         console.error('Error cargando dashboard:', err)
       } finally {
@@ -56,7 +59,7 @@ export default function Dashboard() {
       </div>
 
       {/* Stat cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
         <StatCard
           title="Ventas hoy"
           value={resumen?.total_ventas ?? '—'}
@@ -113,6 +116,20 @@ export default function Dashboard() {
               <circle cx="12" cy="12" r="10"/>
               <line x1="15" y1="9" x2="9" y2="15"/>
               <line x1="9"  y1="9" x2="15" y2="15"/>
+            </svg>
+          }
+        />
+        <StatCard
+          title="Cartera"
+          value={formatCOP(cartera?.total_cartera)}
+          subtitle={`${cartera?.total_clientes || 0} clientes con deuda`}
+          color="#f59e0b"
+          loading={loading}
+          icon={
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" strokeWidth="2">
+              <rect x="1" y="4" width="22" height="16" rx="2" ry="2"/>
+              <line x1="1" y1="10" x2="23" y2="10"/>
             </svg>
           }
         />

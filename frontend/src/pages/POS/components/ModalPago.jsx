@@ -1,13 +1,16 @@
 import { useState, useEffect } from 'react'
-import { ventasService } from '../../../services/api'
+import { ventasService, creditosService } from '../../../services/api'
 
 export default function ModalPago({ total, carrito, onExito, onCerrar }) {
-  const [formasPago,  setFormasPago]  = useState([])
-  const [formaPagoId, setFormaPagoId] = useState(null)
-  const [formaPago,   setFormaPago]   = useState(null)
-  const [montoPagado, setMontoPagado] = useState('')
-  const [procesando,  setProcesando]  = useState(false)
-  const [error,       setError]       = useState('')
+  const [formasPago,       setFormasPago]       = useState([])
+  const [formaPagoId,      setFormaPagoId]      = useState(null)
+  const [formaPago,        setFormaPago]         = useState(null)
+  const [montoPagado,      setMontoPagado]      = useState('')
+  const [procesando,       setProcesando]        = useState(false)
+  const [error,            setError]             = useState('')
+  const [esCredito,        setEsCredito]         = useState(false)
+  const [clienteNombre,    setClienteNombre]     = useState('')
+  const [clienteTelefono,  setClienteTelefono]   = useState('')
 
   useEffect(() => {
     ventasService.formasPago().then(({ data }) => {
@@ -20,55 +23,95 @@ export default function ModalPago({ total, carrito, onExito, onCerrar }) {
     setMontoPagado(total.toString())
   }, [total])
 
-  // Detectar si es efectivo
   const esEfectivo = formaPago?.nombre?.toLowerCase().includes('efectivo')
 
   const monto  = parseFloat(montoPagado) || 0
   const cambio = esEfectivo ? monto - total : 0
-  const valido = formaPagoId && (esEfectivo ? monto >= total : true)
+  const valido = esCredito
+    ? clienteNombre.trim().length > 0
+    : formaPagoId && (esEfectivo ? monto >= total : true)
 
   const seleccionarForma = (fp) => {
     setFormaPagoId(fp.id)
     setFormaPago(fp)
-    // Si no es efectivo, fijar el monto exacto
+    setEsCredito(false)
     if (!fp.nombre?.toLowerCase().includes('efectivo')) {
       setMontoPagado(total.toString())
     }
+  }
+
+  const seleccionarCredito = () => {
+    setEsCredito(true)
+    setFormaPagoId(null)
+    setFormaPago(null)
   }
 
   const procesar = async () => {
     if (!valido) return
     setProcesando(true)
     setError('')
-    try {
-      const payload = {
-        detalle: carrito.map(item => ({
-          producto_id: item.producto_id,
-          cantidad:    item.cantidad,
-          descuento:   item.descuento || 0,
-        })),
-        pagos: [{
-          forma_pago_id: formaPagoId,
-          monto:         total,
-        }],
-      }
-      const { data } = await ventasService.procesar(payload)
-      
-      // ── Abrir cajón de dinero ──────────────────────────
-      try {
-        await fetch('http://localhost:8765/abrir-cajon', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-        })
-      } catch {
-        // Si el cajón falla no interrumpimos la venta
-        console.warn('CajonPOS no disponible')
-      }
-      // ───────────────────────────────────────────────────
 
-      onExito(data, cambio)
+    try {
+      if (esCredito) {
+        // ── Procesar como crédito ──────────────────────
+        // 1. Primero crear la venta con forma de pago especial
+        const payload = {
+          detalle: carrito.map(item => ({
+            producto_id: item.producto_id,
+            cantidad:    item.cantidad,
+            descuento:   item.descuento || 0,
+          })),
+          pagos: [{
+            forma_pago_id: formasPago[0]?.id, // temporal
+            monto:         total,
+          }],
+        }
+        const { data: ventaData } = await ventasService.procesar(payload)
+
+        // 2. Crear el crédito asociado a la venta
+        await creditosService.crear({
+          cliente_nombre:   clienteNombre.trim(),
+          cliente_telefono: clienteTelefono.trim(),
+          total_deuda:      total,
+          venta_id:         ventaData.venta.id,
+          notas:            `Venta #${ventaData.venta.id}`,
+        })
+
+        onExito(ventaData, 0)
+
+      } else {
+        // ── Procesar pago normal ───────────────────────
+        const payload = {
+          detalle: carrito.map(item => ({
+            producto_id: item.producto_id,
+            cantidad:    item.cantidad,
+            descuento:   item.descuento || 0,
+          })),
+          pagos: [{
+            forma_pago_id: formaPagoId,
+            monto:         total,
+          }],
+        }
+        const { data } = await ventasService.procesar(payload)
+
+        // Abrir cajón si es efectivo
+        if (esEfectivo) {
+          try {
+            await fetch('http://localhost:8765/abrir-cajon', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+            })
+          } catch {
+            console.warn('CajonPOS no disponible')
+          }
+        }
+
+        onExito(data, cambio)
+      }
+
     } catch (err) {
-      const msg = err.response?.data?.detalle
+      const msg = err.response?.data?.error
+        || err.response?.data?.detalle
         || err.response?.data?.detail
         || JSON.stringify(err.response?.data)
         || 'Error al procesar la venta'
@@ -125,7 +168,7 @@ export default function ModalPago({ total, carrito, onExito, onCerrar }) {
                 key={fp.id}
                 onClick={() => seleccionarForma(fp)}
                 className="py-3 px-4 rounded-xl text-sm font-semibold transition-all"
-                style={formaPagoId === fp.id ? {
+                style={!esCredito && formaPagoId === fp.id ? {
                   background: 'linear-gradient(135deg, #7c3aed, #a855f7)',
                   color: 'white',
                   boxShadow: '0 4px 16px rgba(124,58,237,0.4)',
@@ -137,11 +180,71 @@ export default function ModalPago({ total, carrito, onExito, onCerrar }) {
                 {fp.nombre}
               </button>
             ))}
+
+            {/* Botón Crédito */}
+            <button
+              onClick={seleccionarCredito}
+              className="py-3 px-4 rounded-xl text-sm font-semibold transition-all"
+              style={esCredito ? {
+                background: 'linear-gradient(135deg, #f59e0b, #d97706)',
+                color: 'white',
+                boxShadow: '0 4px 16px rgba(245,158,11,0.4)',
+              } : {
+                background: 'rgba(245,158,11,0.08)',
+                border: '1px solid rgba(245,158,11,0.2)',
+                color: 'rgba(245,158,11,0.7)',
+              }}>
+              📋 A Crédito
+            </button>
           </div>
         </div>
 
+        {/* Campos crédito */}
+        {esCredito && (
+          <div className="space-y-3 mb-4 p-4 rounded-2xl"
+               style={{ background: 'rgba(245,158,11,0.06)', border: '1px solid rgba(245,158,11,0.15)' }}>
+            <p className="text-xs font-bold uppercase tracking-wider"
+               style={{ color: '#f59e0b' }}>
+              Datos del cliente
+            </p>
+            <div>
+              <p className="text-xs mb-1" style={{ color: 'rgba(196,181,253,0.6)' }}>
+                Nombre *
+              </p>
+              <input
+                type="text"
+                value={clienteNombre}
+                onChange={e => setClienteNombre(e.target.value)}
+                placeholder="Nombre del cliente"
+                className="input-pos w-full px-4 py-3 rounded-xl text-sm"
+              />
+            </div>
+            <div>
+              <p className="text-xs mb-1" style={{ color: 'rgba(196,181,253,0.6)' }}>
+                Teléfono (opcional)
+              </p>
+              <input
+                type="text"
+                value={clienteTelefono}
+                onChange={e => setClienteTelefono(e.target.value)}
+                placeholder="Teléfono del cliente"
+                className="input-pos w-full px-4 py-3 rounded-xl text-sm"
+              />
+            </div>
+            <div className="flex items-center justify-between px-3 py-2 rounded-xl"
+                 style={{ background: 'rgba(245,158,11,0.1)' }}>
+              <span className="text-xs" style={{ color: 'rgba(196,181,253,0.6)' }}>
+                Deuda a registrar
+              </span>
+              <span className="text-sm font-black" style={{ color: '#f59e0b' }}>
+                ${total.toLocaleString('es-CO')}
+              </span>
+            </div>
+          </div>
+        )}
+
         {/* Monto recibido — solo efectivo */}
-        {esEfectivo && (
+        {esEfectivo && !esCredito && (
           <div className="mb-4">
             <p className="text-xs font-semibold mb-2 tracking-widest uppercase"
                style={{ color: 'rgba(196,181,253,0.6)' }}>
@@ -157,8 +260,8 @@ export default function ModalPago({ total, carrito, onExito, onCerrar }) {
           </div>
         )}
 
-        {/* Devolución — solo efectivo y cuando hay cambio */}
-        {esEfectivo && (
+        {/* Devolución — solo efectivo */}
+        {esEfectivo && !esCredito && (
           <div className="flex items-center justify-between px-4 py-3 rounded-xl mb-4"
                style={{
                  background: cambio > 0 ? 'rgba(74,222,128,0.1)' : 'rgba(139,92,246,0.06)',
@@ -169,17 +272,14 @@ export default function ModalPago({ total, carrito, onExito, onCerrar }) {
               Devolución
             </span>
             <span className="text-xl font-black"
-                  style={{
-                    color: cambio > 0 ? '#4ade80' : 'rgba(196,181,253,0.3)',
-                    fontFamily: 'Syne, sans-serif'
-                  }}>
+                  style={{ color: cambio > 0 ? '#4ade80' : 'rgba(196,181,253,0.3)', fontFamily: 'Syne, sans-serif' }}>
               ${cambio > 0 ? cambio.toLocaleString('es-CO') : '0'}
             </span>
           </div>
         )}
 
         {/* Aviso pago digital */}
-        {!esEfectivo && formaPago && (
+        {!esEfectivo && !esCredito && formaPago && (
           <div className="flex items-center gap-3 px-4 py-3 rounded-xl mb-4"
                style={{ background: 'rgba(6,182,212,0.08)', border: '1px solid rgba(6,182,212,0.2)' }}>
             <span style={{ color: '#06b6d4' }}>💳</span>
@@ -205,13 +305,22 @@ export default function ModalPago({ total, carrito, onExito, onCerrar }) {
         <button
           onClick={procesar}
           disabled={!valido || procesando}
-          className="btn-primary w-full py-4 rounded-xl font-black text-white
-                     text-lg tracking-wide disabled:opacity-40 disabled:cursor-not-allowed"
-          style={{ fontFamily: 'Syne, sans-serif' }}>
+          className="w-full py-4 rounded-xl font-black text-white text-lg tracking-wide
+                     disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+          style={{
+            fontFamily: 'Syne, sans-serif',
+            background: esCredito
+              ? 'linear-gradient(135deg, #f59e0b, #d97706)'
+              : 'linear-gradient(135deg, #7c3aed, #a855f7)',
+          }}>
           {procesando ? (
             <span className="flex items-center justify-center gap-2">
               <span className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
               Procesando...
+            </span>
+          ) : esCredito ? (
+            <span className="flex items-center justify-center gap-2">
+              📋 Registrar Crédito ${total.toLocaleString('es-CO')}
             </span>
           ) : (
             <span className="flex items-center justify-center gap-2">

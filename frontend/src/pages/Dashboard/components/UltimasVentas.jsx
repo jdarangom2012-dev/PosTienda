@@ -1,6 +1,3 @@
-// ============================================================
-// 7. src/pages/Dashboard/components/UltimasVentas.jsx
-// ============================================================
 import { useNavigate } from 'react-router-dom'
 
 export default function UltimasVentas({ ventas, loading }) {
@@ -27,6 +24,14 @@ export default function UltimasVentas({ ventas, loading }) {
     )
   }
 
+  // Genera resumen de productos de la venta
+  const resumenProductos = (venta) => {
+    if (!venta.detalle || venta.detalle.length === 0) return 'Sin detalle'
+    const nombres = venta.detalle.map(d => d.producto_nombre || d.nombre)
+    if (nombres.length <= 2) return nombres.join(', ')
+    return `${nombres.slice(0, 2).join(', ')} +${nombres.length - 2} más`
+  }
+
   return (
     <div className="space-y-2">
       {ventas.slice(0, 6).map((venta) => (
@@ -36,12 +41,10 @@ export default function UltimasVentas({ ventas, loading }) {
              style={{ background: 'rgba(139,92,246,0.06)', border: '1px solid rgba(139,92,246,0.1)' }}
              onClick={() => navigate('/reportes')}>
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold"
-                 style={{ background: 'rgba(139,92,246,0.15)', color: '#a78bfa' }}>
-              #{venta.id}
-            </div>
             <div>
-              <p className="text-xs font-medium text-white">{venta.cajero}</p>
+              <p className="text-xs font-medium text-white">
+                {resumenProductos(venta)}
+              </p>
               <p className="text-xs" style={{ color: 'rgba(196,181,253,0.4)' }}>
                 {new Date(venta.fecha_hora).toLocaleTimeString('es-CO', {
                   hour: '2-digit', minute: '2-digit'
@@ -49,7 +52,7 @@ export default function UltimasVentas({ ventas, loading }) {
               </p>
             </div>
           </div>
-          <div className="text-right">
+          <div className="text-right flex-shrink-0">
             <p className="text-sm font-bold text-white">
               ${parseFloat(venta.total).toLocaleString('es-CO')}
             </p>

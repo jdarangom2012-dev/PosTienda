@@ -166,3 +166,12 @@ export const superAdminService = {
   // Usuarios superadmin
   crearAdmin: (data) => api.post('/usuarios/usuarios/', data),
 }
+
+// Servicios de créditos
+export const creditosService = {
+  listar:   (params) => api.get('/creditos/',              { params }),
+  detalle:  (id)     => api.get(`/creditos/${id}/`),
+  crear:    (data)   => api.post('/creditos/',              data),
+  abonar:   (id, data) => api.post(`/creditos/${id}/abonar/`, data),
+  resumen:  ()       => api.get('/creditos/resumen/'),
+}
