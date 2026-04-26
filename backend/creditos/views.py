@@ -8,6 +8,7 @@ from rest_framework.permissions import IsAuthenticated
 from django.db.models        import Sum, Q
 from django.conf             import settings
 from django.utils            import timezone
+from decimal                 import Decimal
 from usuarios.mixins         import TiendaMixin
 from usuarios.models         import Usuario
 from .models                 import Credito, AbonoCredito
@@ -47,33 +48,15 @@ class CreditoViewSet(TiendaMixin, viewsets.ModelViewSet):
         tienda = self.get_tienda()
 
         # ── Validar tope por cliente ──────────────────────
-        tope = float(getattr(settings, 'CREDITO_TOPE_MAXIMO', 50000))
+        tope        = Decimal(str(getattr(settings, 'CREDITO_TOPE_MAXIMO', 50000)))
+        nueva_deuda = Decimal(str(data['total_deuda']))
 
         creditos_cliente = Credito.objects.filter(
-            tienda               = tienda,
+            tienda                 = tienda,
             cliente_nombre__iexact = data['cliente_nombre'],
-            estado               = 'PENDIENTE',
-         )
-        saldo_acumulado = sum(c.saldo_pendiente for c in creditos_cliente)
-
-        nueva_deuda = float(data['total_deuda'])
-
-        if saldo_acumulado + nueva_deuda > tope:
-            return Response({
-                'error': f'El cliente supera el tope de crédito de ${tope:,.0f}. '
-                        f'Deuda actual: ${saldo_acumulado:,.0f}. '
-                        f'Disponible: ${tope - saldo_acumulado:,.0f}.'
-            }, status=status.HTTP_400_BAD_REQUEST)
-
-        # Calcular saldo pendiente manualmente
-        creditos_cliente = Credito.objects.filter(
-            tienda               = tienda,
-            cliente_nombre__iexact = data['cliente_nombre'],
-            estado               = 'PENDIENTE',
+            estado                 = 'PENDIENTE',
         )
         saldo_acumulado = sum(c.saldo_pendiente for c in creditos_cliente)
-
-        nueva_deuda = float(data['total_deuda'])
 
         if saldo_acumulado + nueva_deuda > tope:
             return Response({
@@ -130,10 +113,8 @@ class CreditoViewSet(TiendaMixin, viewsets.ModelViewSet):
 
     @action(detail=False, methods=['get'], url_path='resumen')
     def resumen(self, request):
-        tienda   = self.get_tienda()
-        qs       = Credito.objects.filter(tienda=tienda)
-
-        pendientes = qs.filter(estado='PENDIENTE')
+        tienda        = self.get_tienda()
+        pendientes    = Credito.objects.filter(tienda=tienda, estado='PENDIENTE')
         creditos_list = list(pendientes)
 
         total_cartera  = sum(c.saldo_pendiente for c in creditos_list)
