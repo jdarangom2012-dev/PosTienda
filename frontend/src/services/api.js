@@ -167,6 +167,37 @@ export const superAdminService = {
   crearAdmin: (data) => api.post('/usuarios/usuarios/', data),
 }
 
+// ── Verificar token cada 5 minutos ───────────────────────────
+if (typeof window !== 'undefined') {
+  setInterval(async () => {
+    const token = localStorage.getItem('access_token')
+    if (!token) return
+
+    try {
+      await api.get('/usuarios/perfil/')
+    } catch (err) {
+      if (err.response?.status === 401) {
+        const refresh = localStorage.getItem('refresh_token')
+        if (!refresh) {
+          localStorage.removeItem('access_token')
+          localStorage.removeItem('refresh_token')
+          localStorage.removeItem('usuario')
+          window.location.href = '/login'
+          return
+        }
+        try {
+          const { data } = await axios.post('/api/usuarios/token/refresh/', { refresh })
+          localStorage.setItem('access_token', data.access)
+        } catch {
+          localStorage.removeItem('access_token')
+          localStorage.removeItem('refresh_token')
+          localStorage.removeItem('usuario')
+          window.location.href = '/login'
+        }
+      }
+    }
+  }, 5 * 60 * 1000)
+}
 // Servicios de créditos
 export const creditosService = {
   listar:   (params) => api.get('/creditos/',              { params }),
