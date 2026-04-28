@@ -1,7 +1,7 @@
 // ============================================================
 // 5. src/pages/POS/POS.jsx
 // ============================================================
-import { useState } from 'react'
+import { useState, useRef  } from 'react'
 import BuscadorProducto from './components/BuscadorProducto'
 import CarritoItem      from './components/CarritoItem'
 import ModalPago        from './components/ModalPago'
@@ -17,6 +17,8 @@ export default function POS() {
   const subtotal   = carrito.reduce((s, i) => s + (i.precio_unit * i.cantidad), 0)
   const descuentos = carrito.reduce((s, i) => s + i.descuento, 0)
   const total      = subtotal - descuentos
+   // ── Agrega esta ref ──
+  const buscadorRef = useRef(null)
 
   // Agregar producto al carrito
   const agregarProducto = (producto) => {
@@ -61,12 +63,16 @@ export default function POS() {
     setCambio(cambioDevuelto)
     setModalPago(false)
     setCarrito([])
+     // ── Enfocar buscador después de cobrar ──
+    setTimeout(() => buscadorRef.current?.focus(), 100)
   }
 
   // Nueva venta
   const nuevaVenta = () => {
     setVentaExitosa(null)
     setCambio(0)
+     // ── Enfocar buscador ──
+    setTimeout(() => buscadorRef.current?.focus(), 100)
   }
 
   return (
@@ -77,7 +83,9 @@ export default function POS() {
 
         {/* Buscador */}
        <div className="glass rounded-2xl p-4" style={{ overflow: 'visible', position: 'relative', zIndex: 10 }}>
-          <BuscadorProducto onAgregar={agregarProducto} />
+          <BuscadorProducto onAgregar={agregarProducto}
+          inputRef={buscadorRef}          
+        />
         </div>
 
         {/* Carrito */}

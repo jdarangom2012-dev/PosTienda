@@ -1,7 +1,7 @@
 // ============================================================
 // 3. src/pages/Productos/Productos.jsx
 // ============================================================
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef  } from 'react'
 import { productosService } from '../../services/api'
 import TarjetaProducto from './components/TarjetaProducto'
 import ModalProducto   from './components/ModalProducto'
@@ -19,6 +19,7 @@ export default function Productos() {
   const [productoEdit, setProductoEdit] = useState(null)
   const [pagina,       setPagina]      = useState(1)
   const [total,        setTotal]       = useState(0)
+  const busquedaRef = useRef(null)
 
   const cargar = async (pag = 1, bus = '', cat = '') => {
     setLoading(true)
@@ -49,6 +50,13 @@ export default function Productos() {
     const t = setTimeout(() => cargar(1, busqueda, categoria), 400)
     return () => clearTimeout(t)
   }, [busqueda])
+
+  useEffect(() => {
+    const enfocar = () => setTimeout(() => busquedaRef.current?.focus(), 100)
+    enfocar()
+    window.addEventListener('productos:focus', enfocar)
+    return () => window.removeEventListener('productos:focus', enfocar)
+  }, [])
 
   // Cambio de categoría
   useEffect(() => {
@@ -126,6 +134,7 @@ const totalPaginas = Math.ceil(total / POR_PAGINA)
             </svg>
           </div>
           <input
+            ref={busquedaRef}  // ← AGREGAR
             type="text"
             value={busqueda}
             onChange={e => setBusqueda(e.target.value)}

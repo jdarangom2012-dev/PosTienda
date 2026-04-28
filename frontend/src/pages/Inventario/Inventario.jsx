@@ -1,7 +1,7 @@
 // ============================================================
 // 4. src/pages/Inventario/Inventario.jsx
 // ============================================================
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { inventarioService } from '../../services/api'
 import TablaInventario   from './components/TablaInventario'
 import TablaMovimientos  from './components/TablaMovimientos'
@@ -50,6 +50,15 @@ export default function Inventario() {
       const { data } = await inventarioService.alertas()
       setAlertas(data.productos || [])
     } catch {}
+  }, [])
+
+  const busquedaRef = useRef(null)
+
+  useEffect(() => {
+    const enfocar = () => setTimeout(() => busquedaRef.current?.focus(), 100)
+    enfocar()
+    window.addEventListener('inventario:focus', enfocar)
+    return () => window.removeEventListener('inventario:focus', enfocar)
   }, [])
 
   useEffect(() => {
@@ -198,6 +207,7 @@ export default function Inventario() {
                 </svg>
               </div>
               <input
+                ref={busquedaRef}  // ← AGREGAR
                 type="text"
                 value={busqueda}
                 onChange={e => setBusqueda(e.target.value)}

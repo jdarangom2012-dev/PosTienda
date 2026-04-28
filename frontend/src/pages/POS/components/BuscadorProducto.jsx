@@ -17,16 +17,25 @@
 import { useState, useRef, useEffect } from 'react'
 import { productosService } from '../../../services/api'
 
-export default function BuscadorProducto({ onAgregar }) {
+export default function BuscadorProducto({ onAgregar, inputRef: externalRef }) {
   const [query,       setQuery]       = useState('')
   const [resultados,  setResultados]  = useState([])
   const [buscando,    setBuscando]    = useState(false)
   const [mostrar,     setMostrar]     = useState(false)
-  const inputRef  = useRef(null)
+  const internalRef  = useRef(null)
   const timerRef  = useRef(null)
+  const inputRef    = externalRef || internalRef
 
   // Foco automático al montar
   useEffect(() => { inputRef.current?.focus() }, [])
+
+  // Agrega dentro del useEffect existente o crea uno nuevo
+  useEffect(() => {
+    const enfocar = () => setTimeout(() => inputRef.current?.focus(), 100)
+    enfocar()
+    window.addEventListener('pos:focus', enfocar)
+    return () => window.removeEventListener('pos:focus', enfocar)
+  }, [])
 
   const buscar = async (valor) => {
     setQuery(valor)

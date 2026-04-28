@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef  } from 'react'
 import { creditosService } from '../../services/api'
 import ModalAbono from './components/ModalAbono'
 
@@ -38,6 +38,15 @@ export default function Creditos() {
     const t = setTimeout(cargar, 400)
     return () => clearTimeout(t)
   }, [cargar])
+
+  const busquedaRef = useRef(null)
+  
+  useEffect(() => {
+    const enfocar = () => setTimeout(() => busquedaRef.current?.focus(), 100)
+    enfocar()
+    window.addEventListener('creditos:focus', enfocar)
+    return () => window.removeEventListener('creditos:focus', enfocar)
+  }, [])
 
   const fmt = (v) => `$${parseFloat(v || 0).toLocaleString('es-CO')}`
 
@@ -89,7 +98,9 @@ export default function Creditos() {
             </svg>
           </div>
           <input
-            type="text" value={busqueda}
+            ref={busquedaRef}  // ← AGREGAR
+            type="text"
+            value={busqueda}
             onChange={e => setBusqueda(e.target.value)}
             placeholder="Buscar por cliente..."
             className="input-pos w-full pl-9 pr-4 py-2.5 rounded-xl text-sm"

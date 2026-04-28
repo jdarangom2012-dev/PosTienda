@@ -12,8 +12,10 @@
 // ============================================================
 // 1. src/pages/Productos/components/Categorias.jsx
 // ============================================================
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { categoriasService } from '../../../services/api'
+import { useLocation } from 'react-router-dom'
+
 
 // ── Modal crear / editar ─────────────────────────────────────
 function ModalCategoria({ categoria, onGuardado, onCerrar }) {
@@ -244,7 +246,7 @@ export default function Categorias() {
   const [modalForm,    setModalForm]    = useState(false)
   const [categoriaEdit,setCategoriaEdit]= useState(null)
   const [modalEliminar,setModalEliminar]= useState(null)
-
+  const busquedaRef = useRef(null)  // ← AGREGAR
   const cargar = useCallback(async () => {
     setLoading(true)
     try {
@@ -262,11 +264,27 @@ export default function Categorias() {
   }, [busqueda, soloActivas])
 
   useEffect(() => { cargar() }, [cargar])
+  
+    // Dentro de Categorias()
+  const location = useLocation()
 
+  // Reemplaza los dos useEffect de foco por este único:
+ useEffect(() => {
+  const enfocar = () => {
+    setTimeout(() => busquedaRef.current?.focus(), 100)
+  }
+  // Foco al montar
+  enfocar()
+  // Escuchar evento personalizado desde el sidebar
+  window.addEventListener('categorias:focus', enfocar)
+  return () => window.removeEventListener('categorias:focus', enfocar)
+  }, [])
+    
   const handleGuardado = () => {
     setModalForm(false)
     setCategoriaEdit(null)
     cargar()
+    setTimeout(() => busquedaRef.current?.focus(), 100) // ← AGREGAR
   }
 
   const handleEditar = (c) => {
@@ -339,6 +357,7 @@ export default function Categorias() {
             </svg>
           </div>
           <input
+            ref={busquedaRef}   // ← AGREGAR
             type="text"
             value={busqueda}
             onChange={e => setBusqueda(e.target.value)}

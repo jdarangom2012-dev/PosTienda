@@ -204,16 +204,30 @@ export default function Sidebar({ collapsed, onToggle }) {
 
       {/* Nav items */}
       <nav className="flex-1 overflow-y-auto py-4 px-2 space-y-1">
-        {itemsVisibles.map((item) => (
+          {itemsVisibles.map((item) => (
           <NavLink
             key={item.path}
             to={item.path}
+            onClick={() => {
+              if (item.path === '/categorias') {
+                setTimeout(() => window.dispatchEvent(new Event('categorias:focus')), 200)
+              }
+              if (item.path === '/productos') {
+                setTimeout(() => window.dispatchEvent(new Event('productos:focus')), 200)
+              }
+              if (item.path === '/inventario') {
+                setTimeout(() => window.dispatchEvent(new Event('inventario:focus')), 200)
+              }
+              if (item.path === '/creditos') {
+                setTimeout(() => window.dispatchEvent(new Event('creditos:focus')), 200)
+              }
+              if (item.path === '/pos') {
+                setTimeout(() => window.dispatchEvent(new Event('pos:focus')), 200)
+              }
+            }}
             className={({ isActive }) =>
               `flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 group
-               ${isActive
-                 ? 'text-white'
-                 : 'text-purple-300 hover:text-white'
-               }`
+              ${isActive ? 'text-white' : 'text-purple-300 hover:text-white'}`
             }
             style={({ isActive }) => isActive ? {
               background: 'linear-gradient(135deg, rgba(124,58,237,0.4), rgba(168,85,247,0.2))',
