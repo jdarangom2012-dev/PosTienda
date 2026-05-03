@@ -64,7 +64,7 @@ class VentaViewSet(TiendaMixin, viewsets.ReadOnlyModelViewSet):
 
     @action(detail=False, methods=['get'], url_path='hoy')
     def hoy(self, request):
-        hoy    = timezone.now().date()
+        hoy = timezone.now().astimezone(timezone.get_current_timezone()).date()  # ← CAMBIAR
         ventas = self.get_queryset().filter(
             fecha_hora__date=hoy,
             estado='COMPLETADA'
@@ -73,7 +73,7 @@ class VentaViewSet(TiendaMixin, viewsets.ReadOnlyModelViewSet):
 
     @action(detail=False, methods=['get'], url_path='resumen-hoy')
     def resumen_hoy(self, request):
-        hoy    = timezone.now().date()
+        hoy = timezone.now().astimezone(timezone.get_current_timezone()).date()  # ← CORRECTO
         tienda = self.get_tienda()
 
         qs_base    = self.get_queryset().filter(fecha_hora__date=hoy)
@@ -120,7 +120,7 @@ class VentaViewSet(TiendaMixin, viewsets.ReadOnlyModelViewSet):
 
     @action(detail=False, methods=['get'], url_path='resumen-semana')
     def resumen_semana(self, request):
-        hoy    = timezone.now().date()
+        hoy    = timezone.now().astimezone(timezone.get_current_timezone()).date()
         hace_7 = hoy - timedelta(days=6)
         tienda = self.get_tienda()
 

@@ -28,7 +28,7 @@ export default function Dashboard() {
           creditosService.resumen(),
         ])
         setResumen(r.data)
-        setSemana(s.data.detalle || [])
+        setSemana(s.data.por_dia || [])
         setAlertas(a.data.productos || [])
         setVentasHoy(v.data || [])
         setCartera(c.data)

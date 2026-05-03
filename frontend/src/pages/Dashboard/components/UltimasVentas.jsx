@@ -33,8 +33,8 @@ export default function UltimasVentas({ ventas, loading }) {
   }
 
   return (
-    <div className="space-y-2">
-      {ventas.slice(0, 6).map((venta) => (
+    <div className="space-y-2 overflow-y-auto" style={{ maxHeight: '400px' }}>
+      {ventas.map((venta) => (
         <div key={venta.id}
              className="flex items-center justify-between px-3 py-2.5 rounded-xl
                         cursor-pointer transition-all duration-200 hover:scale-[1.01]"

@@ -74,7 +74,7 @@ export default function TablaInventario({ items, onAjustar, loading }) {
                   <td className="px-4 py-3">
                     <p className="text-sm font-semibold text-white">{item.producto_nombre}</p>
                     <p className="text-xs" style={{ color: 'rgba(196,181,253,0.4)' }}>
-                      {item.codigo_barras || 'Sin código'}
+                      {item.producto_codigo || 'Sin código'}
                     </p>
                   </td>
                   <td className="px-4 py-3">
@@ -154,7 +154,7 @@ export default function TablaInventario({ items, onAjustar, loading }) {
               className="w-8 h-8 rounded-lg flex items-center justify-center transition-all"
               style={{
                 background: 'rgba(139,92,246,0.08)',
-                border: '1px solid rgba(139,92,246,0.15)',
+                border: '1px solid r0gba(139,92,246,0.15)',
                 color: pagina === 1 ? 'rgba(196,181,253,0.2)' : '#a78bfa',
                 cursor: pagina === 1 ? 'not-allowed' : 'pointer',
               }}>

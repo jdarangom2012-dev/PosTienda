@@ -46,10 +46,10 @@ export default function VentasChart({ data, loading }) {
 
   const formatted = data.map(d => ({
     ...d,
-    dia: new Date(d.fecha_hora__date + 'T00:00:00').toLocaleDateString('es-CO', {
+    dia: new Date(d.fecha + 'T12:00:00').toLocaleDateString('es-CO', {
       weekday: 'short', day: 'numeric'
     }),
-    total_dia: parseFloat(d.total_dia) || 0,
+    ingresos: parseFloat(d.ingresos) || 0,
   }))
 
   return (
@@ -72,7 +72,7 @@ export default function VentasChart({ data, loading }) {
                axisLine={false} tickLine={false}
                tickFormatter={v => `$${(v/1000).toFixed(0)}k`} />
         <Tooltip content={<CustomTooltip />} />
-        <Area type="monotone" dataKey="total_dia" stroke="#8b5cf6"
+        <Area type="monotone" dataKey="ingresos" stroke="#8b5cf6"
               strokeWidth={2} fill="url(#gradVentas)" />
         <Area type="monotone" dataKey="cantidad" stroke="#e879f9"
               strokeWidth={2} fill="url(#gradCantidad)" />
