@@ -23,7 +23,7 @@ from .serializers                import (
 )
 from usuarios.mixins import TiendaMixin
 from usuarios.models import Usuario
-
+from auditoria.models import registrar_auditoria
 
 class FormaPagoViewSet(TiendaMixin, viewsets.ModelViewSet):
     queryset           = FormaPago.objects.all().order_by('nombre')
@@ -265,6 +265,13 @@ class ProcesarVentaView(APIView):
         venta.descuento = descuento_total
         venta.total     = subtotal_total - descuento_total
         venta.save()
+        
+        registrar_auditoria(
+            request, 'INSERT', tabla='ventas',
+            registro_id=venta.id,
+            valor_nuevo={'total': str(venta.total), 'items': len(detalle)},
+            detalle=f'Venta #{venta.id} — Total: ${venta.total} — {len(detalle)} productos',
+        )
 
         for pago in pagos:
             forma_pago = FormaPago.objects.get(id=pago['forma_pago_id'])
@@ -346,6 +353,14 @@ class CancelarVentaView(APIView):
         venta.estado             = 'CANCELADA'
         venta.motivo_cancelacion = serializer.validated_data['motivo']
         venta.save()
+        
+        registrar_auditoria(
+            request, 'CANCEL', tabla='ventas',
+            registro_id=venta.id,
+            valor_anterior={'estado': 'COMPLETADA'},
+            valor_nuevo={'estado': 'CANCELADA', 'motivo': serializer.validated_data['motivo']},
+            detalle=f'Cancelación venta #{venta.id}: {serializer.validated_data["motivo"]}',
+        )
 
         usuario_obj = Usuario.objects.get(pk=request.user.pk)
 

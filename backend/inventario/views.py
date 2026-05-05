@@ -17,6 +17,7 @@ from .serializers                import (
 from usuarios.mixins import TiendaMixin
 from usuarios.models import Usuario
 from rest_framework.pagination import PageNumberPagination
+from auditoria.models import registrar_auditoria
 
 class InventarioPagination(PageNumberPagination):
     page_size = 20
@@ -125,6 +126,14 @@ class MovimientoViewSet(TiendaMixin, viewsets.ModelViewSet):
             stock_nuevo     = stock_nuevo,
             motivo          = serializer.validated_data.get('motivo', ''),
             usuario         = usuario_obj,
+        )
+        
+        registrar_auditoria(
+            self.request, 'AJUSTE', tabla='inventario',
+            registro_id=inventario.id,
+            valor_anterior={'stock': float(stock_anterior)},
+            valor_nuevo={'stock': float(stock_nuevo), 'tipo': tipo},
+            detalle=f'Movimiento {tipo} — {producto.nombre}: {stock_anterior} → {stock_nuevo}',
         )
 
     @action(detail=False, methods=['get'], url_path='por-producto/(?P<producto_id>[^/.]+)')

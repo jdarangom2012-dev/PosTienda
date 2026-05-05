@@ -19,7 +19,7 @@ from .mixins import TiendaMixin
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.filters import SearchFilter
 from .serializers import UsuarioSerializer, UsuarioCrearSerializer, TiendaSerializer
-
+from auditoria.models import registrar_auditoria
 
 # ── Permisos ─────────────────────────────────────────────────
 class EsAdmin(IsAuthenticated):
@@ -70,6 +70,11 @@ class CustomTokenSerializer(TokenObtainPairSerializer):
                 'tienda_nombre':  tienda.nombre if tienda else '',
                 'tienda_codigo':  tienda.codigo if tienda else '',
             }
+            registrar_auditoria(
+                None, 'LOGIN', tabla='usuarios',
+                usuario_nombre=usuario.username,
+                detalle=f'Login exitoso: {usuario.username} — SUPERADMIN',
+            )             
             return data
 
         # Usuarios normales — validar tienda
@@ -99,6 +104,12 @@ class CustomTokenSerializer(TokenObtainPairSerializer):
             'tienda_nombre':  tienda.nombre,
             'tienda_codigo':  tienda.codigo,
         }
+
+        registrar_auditoria(
+            None, 'LOGIN', tabla='usuarios',
+            usuario_nombre=usuario.username,
+            detalle=f'Login exitoso: {usuario.username} — Tienda: {tienda.nombre}',
+        )
         return data
 
 

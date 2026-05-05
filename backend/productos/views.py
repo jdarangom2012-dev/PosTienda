@@ -14,7 +14,7 @@ from .serializers import (
 from inventario.models import Inventario
 from usuarios.mixins   import TiendaMixin
 from rest_framework.filters import SearchFilter, OrderingFilter
-
+from auditoria.models import registrar_auditoria
 
 class CategoriaViewSet(TiendaMixin, viewsets.ModelViewSet):
     queryset           = Categoria.objects.all().order_by('nombre')
@@ -86,6 +86,14 @@ class ProductoViewSet(TiendaMixin, viewsets.ModelViewSet):
         # ─────────────────────────────────────────────────────────
 
         producto = serializer.save(tienda=tienda)
+        
+        registrar_auditoria(
+            self.request, 'INSERT', tabla='productos',
+            registro_id=producto.id,
+            valor_nuevo={'nombre': producto.nombre, 'precio_venta': str(producto.precio_venta)},
+            detalle=f'Producto creado: {producto.nombre}',
+        )
+         
         Inventario.objects.get_or_create(
             producto=producto,
             defaults={'cantidad_actual': 0, 'tienda': tienda}
@@ -149,6 +157,14 @@ class ProductoViewSet(TiendaMixin, viewsets.ModelViewSet):
         if precio_costo:
             producto.precio_costo = precio_costo
         producto.save()
+        
+        registrar_auditoria(
+            request, 'PRECIO', tabla='productos',
+            registro_id=producto.id,
+            valor_nuevo={'precio_venta': precio_venta, 'precio_costo': precio_costo},
+            detalle=f'Cambio de precio: {producto.nombre}',
+        )
+         
         return Response(ProductoSerializer(producto).data)
 
     @action(detail=True, methods=['post'], url_path='activar')

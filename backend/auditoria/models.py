@@ -100,14 +100,12 @@ class Auditoria(models.Model):
 # Úsala desde cualquier view o signal
 # ============================================================
 def registrar_auditoria(request, accion, tabla=None, registro_id=None,
-                        valor_anterior=None, valor_nuevo=None, detalle=None):
+                        valor_anterior=None, valor_nuevo=None, detalle=None,
+                        usuario_nombre=None):
     """
     Crea un registro de auditoría.
-    Uso:
-        registrar_auditoria(request, 'UPDATE', 'productos', producto.id,
-                            valor_anterior={'precio': 1000},
-                            valor_nuevo={'precio': 1200},
-                            detalle='Cambio de precio de Coca Cola')
+    - Si se pasa request con usuario autenticado, toma los datos del request.
+    - Si request=None, usa usuario_nombre como fallback.
     """
     usuario = request.user if request and request.user.is_authenticated else None
     ip = None
@@ -116,9 +114,15 @@ def registrar_auditoria(request, accion, tabla=None, registro_id=None,
         if not ip:
             ip = request.META.get('REMOTE_ADDR')
 
+    nombre_final = (
+        usuario.get_full_name() or usuario.username
+        if usuario
+        else (usuario_nombre or 'Sistema')
+    )
+
     Auditoria.objects.create(
         usuario_id_ref=usuario.id if usuario else None,
-        usuario_nombre=usuario.get_full_name() or usuario.username if usuario else 'Sistema',
+        usuario_nombre=nombre_final,
         accion=accion,
         tabla_afectada=tabla,
         registro_id=registro_id,
