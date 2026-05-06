@@ -16,6 +16,13 @@ export default function Usuarios() {
   const [filtroRol,    setFiltroRol]    = useState('')
   const [modalAbierto, setModalAbierto] = useState(false)
   const [usuarioEdit,  setUsuarioEdit]  = useState(null)
+  const [modalPassword,    setModalPassword]    = useState(false)
+  const [usuarioPassword,  setUsuarioPassword]  = useState(null)
+  const [pwdNuevo,         setPwdNuevo]         = useState('')
+  const [pwdNuevo2,        setPwdNuevo2]        = useState('')
+  const [pwdLoading,       setPwdLoading]       = useState(false)
+  const [pwdError,         setPwdError]         = useState('')
+  const esSuperAdmin = yo?.rol === 'SUPERADMIN'
 
   const cargar = useCallback(async () => {
     setLoading(true)
@@ -59,6 +66,31 @@ export default function Usuarios() {
     setModalAbierto(false)
     setUsuarioEdit(null)
     cargar()
+  }
+  
+  const handleCambiarPassword = (u) => {
+    setUsuarioPassword(u)
+    setPwdNuevo('')
+    setPwdNuevo2('')
+    setPwdError('')
+    setModalPassword(true)
+  }
+
+  const handleGuardarPassword = async () => {
+    if (!pwdNuevo || !pwdNuevo2) { setPwdError('Completa ambos campos.'); return }
+    if (pwdNuevo !== pwdNuevo2)  { setPwdError('Las contraseñas no coinciden.'); return }
+    if (pwdNuevo.length < 6)     { setPwdError('Mínimo 6 caracteres.'); return }
+    setPwdLoading(true)
+    setPwdError('')
+    try {
+      await usuariosService.cambiarPassword(usuarioPassword.id, { password_nuevo: pwdNuevo, password_nuevo2: pwdNuevo2 })
+      setModalPassword(false)
+      alert(`Contraseña de ${usuarioPassword.username} actualizada correctamente.`)
+    } catch (err) {
+      setPwdError(err.response?.data?.error || 'Error al cambiar la contraseña.')
+    } finally {
+      setPwdLoading(false)
+    }
   }
 
   const admins      = usuarios.filter(u => u.rol === 'COORDINADOR').length
@@ -188,8 +220,10 @@ export default function Usuarios() {
               key={u.id}
               usuario={u}
               esYo={u.id === yo?.id}
+              esSuperAdmin={esSuperAdmin}
               onEditar={handleEditar}
               onToggle={handleToggle}
+              onCambiarPassword={handleCambiarPassword}
             />
           ))}
         </div>
@@ -203,6 +237,43 @@ export default function Usuarios() {
           onCerrar={() => { setModalAbierto(false); setUsuarioEdit(null) }}
         />
       )}
+      {/* Modal cambiar contraseña */}
+      {modalPassword && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4"
+             style={{ background: 'rgba(0,0,0,0.7)' }}>
+          <div className="glass rounded-2xl p-6 w-full max-w-sm space-y-4">
+            <h3 className="text-lg font-black text-white" style={{ fontFamily: 'Syne, sans-serif' }}>
+              🔑 Cambiar contraseña
+            </h3>
+            <p className="text-sm" style={{ color: 'rgba(196,181,253,0.6)' }}>
+              Usuario: <span className="text-white font-bold">@{usuarioPassword?.username}</span>
+            </p>
+            <input type="password" value={pwdNuevo}
+                   onChange={e => setPwdNuevo(e.target.value)}
+                   placeholder="Nueva contraseña"
+                   className="input-pos w-full px-4 py-3 rounded-xl text-sm" />
+            <input type="password" value={pwdNuevo2}
+                   onChange={e => setPwdNuevo2(e.target.value)}
+                   placeholder="Confirmar contraseña"
+                   className="input-pos w-full px-4 py-3 rounded-xl text-sm" />
+            {pwdError && (
+              <p className="text-xs text-red-400">{pwdError}</p>
+            )}
+            <div className="flex gap-3">
+              <button onClick={() => setModalPassword(false)}
+                      className="flex-1 py-3 rounded-xl text-sm font-semibold"
+                      style={{ background: 'rgba(239,68,68,0.1)', color: '#f87171' }}>
+                Cancelar
+              </button>
+              <button onClick={handleGuardarPassword} disabled={pwdLoading}
+                      className="flex-1 py-3 rounded-xl text-sm font-bold text-white btn-primary">
+                {pwdLoading ? 'Guardando...' : 'Guardar'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
+    
   )
 }

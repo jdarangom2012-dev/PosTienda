@@ -61,12 +61,12 @@ let timerInactividad = null
 
 const resetTimer = () => {
   if (timerInactividad) clearTimeout(timerInactividad)
-  timerInactividad = setTimeout(() => {
-    localStorage.removeItem('access_token')
-    localStorage.removeItem('refresh_token')
-    localStorage.removeItem('usuario')
-    window.location.href = '/login'
-  }, TIEMPO_INACTIVIDAD)
+    timerInactividad = setTimeout(() => {
+      localStorage.removeItem('access_token')
+      localStorage.removeItem('refresh_token')
+      localStorage.removeItem('usuario')
+      window.location.href = '/login'
+    }, TIEMPO_INACTIVIDAD)
 }
 
 // Detectar actividad del usuario
@@ -93,6 +93,7 @@ export const usuariosService = {
   crear:      (data)   => api.post('/usuarios/usuarios/', data),
   actualizar: (id, data) => api.patch(`/usuarios/usuarios/${id}/`, data),
   eliminar:   (id)     => api.delete(`/usuarios/usuarios/${id}/`),
+  cambiarPassword: (id, data) => api.post(`/usuarios/usuarios/${id}/cambiar-password/`, data),
 }
 
 // Servicios de productos

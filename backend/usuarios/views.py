@@ -193,7 +193,43 @@ class UsuarioViewSet(viewsets.ModelViewSet):
         if rol:
             qs = qs.filter(rol=rol)
         return qs
+    
+    @action(detail=True, methods=['post'], url_path='cambiar-password')
+    def cambiar_password(self, request, pk=None):
+        """
+        Permite al SUPERADMIN cambiar la contraseña de cualquier usuario.
+        POST /api/usuarios/{id}/cambiar-password/
+        Body: { "password_nuevo": "xxx", "password_nuevo2": "xxx" }
+        """
+        if not request.user.es_superadmin:
+            raise PermissionDenied('Solo el Superadmin puede cambiar contraseñas de otros usuarios.')
+        
+        usuario = self.get_object()
+        password_nuevo  = request.data.get('password_nuevo')
+        password_nuevo2 = request.data.get('password_nuevo2')
 
+        if not password_nuevo or not password_nuevo2:
+            return Response(
+                {'error': 'Se requieren password_nuevo y password_nuevo2.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        if password_nuevo != password_nuevo2:
+            return Response(
+                {'error': 'Las contraseñas no coinciden.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        usuario.set_password(password_nuevo)
+        usuario.save()
+
+        registrar_auditoria(
+            request, 'UPDATE', tabla='usuarios',
+            registro_id=usuario.id,
+            detalle=f'Cambio de contraseña del usuario: {usuario.username}',
+        )
+
+        return Response({'mensaje': f'Contraseña de {usuario.username} actualizada correctamente.'})
+    
     def get_serializer_class(self):
         if self.action == 'create':
             return UsuarioCrearSerializer

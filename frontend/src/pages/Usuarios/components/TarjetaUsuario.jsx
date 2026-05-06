@@ -19,7 +19,7 @@ const ROL_CONFIG = {
   ALMACENISTA: { label: 'Almacenista',   color: '#4ade80', bg: 'rgba(74,222,128,0.12)' },
 }
 
-export default function TarjetaUsuario({ usuario, onEditar, onToggle, esYo }) {
+export default function TarjetaUsuario({ usuario, onEditar, onToggle, onCambiarPassword, esYo, esSuperAdmin }) {
   const rol = ROL_CONFIG[usuario.rol] || ROL_CONFIG.CAJERO
   const inicial = (usuario.nombre_completo || usuario.username || '?')[0].toUpperCase()
 
@@ -110,7 +110,19 @@ export default function TarjetaUsuario({ usuario, onEditar, onToggle, esYo }) {
             {usuario.is_active ? 'Desactivar' : 'Activar'}
           </button>
         )}
+        {esSuperAdmin && !esYo && (
+          <button onClick={() => onCambiarPassword(usuario)}
+                  className="flex-1 py-2 rounded-xl text-xs font-semibold transition-all hover:scale-105"
+                  style={{
+                    background: 'rgba(234,179,8,0.08)',
+                    border: '1px solid rgba(234,179,8,0.2)',
+                    color: '#facc15',
+                  }}>
+            🔑 Password
+          </button>
+        )}
       </div>
     </div>
+    
   )
 }
