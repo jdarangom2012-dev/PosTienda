@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>PosFácil — Portada Facebook</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@900&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: #1a1a2e; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; gap: 24px; }
+
+  #canvas-wrapper {
+    width: 820px;
+    height: 312px;
+    background: #0d0a1f;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
+  }
+
+  /* Blob de fondo */
+  #canvas-wrapper::before {
+    content: '';
+    position: absolute;
+    width: 500px; height: 500px;
+    background: radial-gradient(circle, rgba(124,58,237,0.25) 0%, transparent 70%);
+    top: -150px; left: -100px;
+    pointer-events: none;
+  }
+  #canvas-wrapper::after {
+    content: '';
+    position: absolute;
+    width: 400px; height: 400px;
+    background: radial-gradient(circle, rgba(6,182,212,0.12) 0%, transparent 70%);
+    bottom: -150px; right: -50px;
+    pointer-events: none;
+  }
+
+  .logo-inner {
+    display: flex;
+    align-items: center;
+    gap: 36px;
+    position: relative;
+    z-index: 2;
+  }
+
+  .icon-box {
+    width: 130px; height: 130px;
+    border-radius: 32px;
+    background: linear-gradient(135deg, #6d28d9, #a855f7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 16px 60px rgba(124,58,237,0.5);
+    flex-shrink: 0;
+    position: relative;
+  }
+
+  .icon-dot {
+    position: absolute;
+    top: -8px; right: -8px;
+    width: 22px; height: 22px;
+    border-radius: 50%;
+    background: #06b6d4;
+    border: 3px solid #0d0a1f;
+    box-shadow: 0 0 14px rgba(6,182,212,0.6);
+  }
+
+  .text-wrap {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .logo-name {
+    font-family: 'Syne', 'Arial Black', sans-serif;
+    font-weight: 900;
+    font-size: 88px;
+    line-height: 1;
+    letter-spacing: -3px;
+    color: #ffffff;
+  }
+
+  .logo-name span {
+    background: linear-gradient(135deg, #a855f7, #06b6d4);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .logo-tag {
+    font-family: 'DM Sans', Arial, sans-serif;
+    font-size: 15px;
+    letter-spacing: 0.22em;
+    color: #c4b5fd;
+    text-transform: uppercase;
+    font-weight: 400;
+  }
+
+  .accent-line {
+    width: 52px; height: 4px;
+    border-radius: 2px;
+    background: linear-gradient(90deg, #7c3aed, #06b6d4);
+    margin-top: 2px;
+  }
+
+  /* Instrucciones */
+  .instrucciones {
+    color: rgba(255,255,255,0.4);
+    font-family: Arial, sans-serif;
+    font-size: 13px;
+    text-align: center;
+    line-height: 1.8;
+  }
+
+  .btn-save {
+    padding: 12px 32px;
+    background: linear-gradient(135deg, #7c3aed, #a855f7);
+    color: white;
+    border: none;
+    border-radius: 12px;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    font-family: Arial, sans-serif;
+  }
+  .btn-save:hover { opacity: 0.85; }
+
+  .size-badge {
+    background: rgba(124,58,237,0.2);
+    border: 1px solid rgba(124,58,237,0.3);
+    color: #c4b5fd;
+    font-family: Arial, sans-serif;
+    font-size: 12px;
+    padding: 4px 12px;
+    border-radius: 100px;
+  }
+</style>
+</head>
+<body>
+
+<span class="size-badge">820 × 312 px — Portada Facebook</span>
+
+<div id="canvas-wrapper">
+  <div class="logo-inner">
+    <div class="icon-box">
+      <div class="icon-dot"></div>
+      <svg width="72" height="72" viewBox="0 0 72 72" fill="none">
+        <rect x="12" y="28" width="48" height="36" rx="7" stroke="white" stroke-width="4" stroke-linejoin="round"/>
+        <path d="M20 28 C20 12, 52 12, 52 28" stroke="white" stroke-width="4" stroke-linecap="round" fill="none"/>
+      </svg>
+    </div>
+    <div class="text-wrap">
+      <div class="logo-name">Pos<span>Fácil</span></div>
+      <div class="logo-tag">Sistema de Punto de Venta</div>
+      <div class="accent-line"></div>
+    </div>
+  </div>
+</div>
+
+<p class="instrucciones">
+  Pasos para guardar:<br>
+  <strong style="color:white;">1.</strong> Presiona <strong style="color:white;">Win + Shift + S</strong> &nbsp;→&nbsp; selecciona el rectángulo azul de arriba<br>
+  <strong style="color:white;">2.</strong> Abre <strong style="color:white;">Paint</strong> → Ctrl+V → Archivo → Guardar como JPG<br>
+  O usa <strong style="color:white;">Ctrl+S</strong> para guardar esta página y luego captura con Snipping Tool
+</p>
+
+<button class="btn-save" onclick="capturar()">Descargar como PNG</button>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script>
+function capturar() {
+  const el = document.getElementById('canvas-wrapper');
+  html2canvas(el, {
+    scale: 2,
+    backgroundColor: '#0d0a1f',
+    useCORS: true,
+    width: 820,
+    height: 312,
+  }).then(canvas => {
+    const link = document.createElement('a');
+    link.download = 'posfacil_portada_facebook.png';
+    link.href = canvas.toDataURL('image/png');
+    link.click();
+  });
+}
+</script>
+
+</body>
+</html>

@@ -1,0 +1,78 @@
+<svg width="100%" viewBox="0 0 680 320" role="img" style="" xmlns="http://www.w3.org/2000/svg">
+<title style="fill:rgb(0, 0, 0);stroke:none;color:rgb(255, 255, 255);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto">Logo PosFácil</title>
+<desc style="fill:rgb(0, 0, 0);stroke:none;color:rgb(255, 255, 255);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto">Logo moderno y minimalista de PosFácil con icono de bolsa de compras y tipografía limpia en tonos violeta</desc>
+
+<defs>
+  
+
+  <!-- Gradient violeta para el icono -->
+  <linearGradient id="iconGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+    <stop offset="0%" stop-color="#6d28d9"/>
+    <stop offset="100%" stop-color="#a855f7"/>
+  </linearGradient>
+
+  <!-- Gradient para el acento del texto -->
+  <linearGradient id="accentGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+    <stop offset="0%" stop-color="#7c3aed"/>
+    <stop offset="100%" stop-color="#06b6d4"/>
+  </linearGradient>
+
+  <!-- Sombra suave del icono -->
+  <filter id="softShadow" x="-20%" y="-20%" width="140%" height="140%">
+    <feDropShadow dx="0" dy="6" stdDeviation="10" flood-color="#7c3aed" flood-opacity="0.28"/>
+  </filter>
+<mask id="imagine-text-gaps-wfdvpk" maskUnits="userSpaceOnUse"><rect x="0" y="0" width="680" height="320" fill="white"/><rect x="174" y="67" width="326.171875" height="105" fill="black" rx="2"/><rect x="176" y="159" width="300" height="21" fill="black" rx="2"/><rect x="268.65625" y="212" width="141.6875" height="16" fill="black" rx="2"/><rect x="112" y="249" width="143.25" height="46" fill="black" rx="2"/><rect x="112" y="287" width="195.171875" height="15" fill="black" rx="2"/><rect x="488.25" y="258" width="155.75" height="16" fill="black" rx="2"/></mask></defs>
+
+<!-- ═══════════════════════════════════════ -->
+<!-- VERSIÓN OSCURA (fondo transparente)    -->
+<!-- ═══════════════════════════════════════ -->
+
+<!-- Icono — contenedor redondeado -->
+<rect x="40" y="70" width="120" height="120" rx="28" fill="url(#iconGrad)" filter="url(#softShadow)" style="stroke:none;color:rgb(255, 255, 255);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
+
+<!-- Bolsa de compras — cuerpo -->
+<rect x="63" y="105" width="74" height="58" rx="8" fill="none" stroke="white" stroke-width="3.5" stroke-linejoin="round" style="fill:none;stroke:rgb(255, 255, 255);color:rgb(255, 255, 255);stroke-width:3.5px;stroke-linecap:butt;stroke-linejoin:round;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
+
+<!-- Bolsa — asa izquierda -->
+<path d="M 75 105 C 75 88, 125 88, 125 105" fill="none" stroke="white" stroke-width="3.5" stroke-linecap="round" style="fill:none;stroke:rgb(255, 255, 255);color:rgb(255, 255, 255);stroke-width:3.5px;stroke-linecap:round;stroke-linejoin:miter;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
+
+<!-- Punto decorativo derecho (POS bullet) -->
+<circle cx="148" cy="73" r="7" fill="#06b6d4" style="fill:rgb(6, 182, 212);stroke:none;color:rgb(255, 255, 255);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
+
+<!-- Nombre principal — versión oscura -->
+<text x="178" y="148" style="fill:rgb(255, 255, 255);stroke:none;color:rgb(255, 255, 255);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:1;font-family:Syne, &quot;Arial Black&quot;, sans-serif;font-size:72px;font-weight:900;text-anchor:start;dominant-baseline:auto">Pos<tspan fill="url(#accentGrad)" style="stroke:none;color:rgb(255, 255, 255);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:1;font-family:Syne, &quot;Arial Black&quot;, sans-serif;font-size:72px;font-weight:900;text-anchor:start;dominant-baseline:auto">Fácil</tspan></text>
+
+<!-- Tagline -->
+<text x="180" y="175" style="fill:rgb(196, 181, 253);stroke:none;color:rgb(255, 255, 255);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:1;font-family:&quot;DM Sans&quot;, Arial, sans-serif;font-size:15px;font-weight:400;text-anchor:start;dominant-baseline:auto">SISTEMA DE PUNTO DE VENTA</text>
+
+<!-- Línea decorativa bajo el tagline -->
+<rect x="180" y="185" width="48" height="3" rx="1.5" fill="url(#accentGrad)" style="stroke:none;color:rgb(255, 255, 255);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
+
+
+<!-- ═══════════════════════════════════════ -->
+<!-- SEPARADOR                              -->
+<!-- ═══════════════════════════════════════ -->
+<line x1="40" y1="228" x2="640" y2="228" stroke="#e5e7eb" stroke-width="0.5" stroke-dasharray="4 4" mask="url(#imagine-text-gaps-wfdvpk)" style="fill:rgb(0, 0, 0);stroke:rgb(229, 231, 235);color:rgb(255, 255, 255);stroke-width:0.5px;stroke-dasharray:4px, 4px;stroke-linecap:butt;stroke-linejoin:miter;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
+<text x="340" y="224" text-anchor="middle" style="font-family:Arial;font-size:11px;fill:#9ca3af;;fill:rgb(156, 163, 175);stroke:none;color:rgb(255, 255, 255);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:1;font-family:Arial;font-size:11px;font-weight:400;text-anchor:middle;dominant-baseline:auto">versión sobre fondo oscuro</text>
+
+
+<!-- ═══════════════════════════════════════ -->
+<!-- VERSIÓN CLARA (sobre fondo oscuro)     -->
+<!-- ═══════════════════════════════════════ -->
+
+<!-- Fondo oscuro para demostrar versión light -->
+<rect x="40" y="238" width="600" height="62" rx="14" fill="#0d0a1f" style="fill:rgb(13, 10, 31);stroke:none;color:rgb(255, 255, 255);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
+
+<!-- Icono pequeño versión light -->
+<rect x="60" y="250" width="42" height="42" rx="10" fill="url(#iconGrad)" style="stroke:none;color:rgb(255, 255, 255);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
+<rect x="70" y="264" width="22" height="18" rx="3" fill="none" stroke="white" stroke-width="2.2" style="fill:none;stroke:rgb(255, 255, 255);color:rgb(255, 255, 255);stroke-width:2.2px;stroke-linecap:butt;stroke-linejoin:miter;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
+<path d="M 74 264 C 74 257, 92 257, 92 264" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round" style="fill:none;stroke:rgb(255, 255, 255);color:rgb(255, 255, 255);stroke-width:2.2px;stroke-linecap:round;stroke-linejoin:miter;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
+<circle cx="99" cy="243" r="4" fill="#06b6d4" style="fill:rgb(6, 182, 212);stroke:none;color:rgb(255, 255, 255);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
+
+<!-- Nombre versión clara -->
+<text x="116" y="284" style="font-size:30px;letter-spacing:-0.5px;;fill:rgb(255, 255, 255);stroke:none;color:rgb(255, 255, 255);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:1;font-family:Syne, &quot;Arial Black&quot;, sans-serif;font-size:30px;font-weight:900;text-anchor:start;dominant-baseline:auto">Pos<tspan fill="url(#accentGrad)" style="stroke:none;color:rgb(255, 255, 255);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:1;font-family:Syne, &quot;Arial Black&quot;, sans-serif;font-size:30px;font-weight:900;text-anchor:start;dominant-baseline:auto">Fácil</tspan></text>
+<text x="116" y="298" style="font-size:10px;letter-spacing:0.15em;;fill:rgb(196, 181, 253);stroke:none;color:rgb(255, 255, 255);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:1;font-family:&quot;DM Sans&quot;, Arial, sans-serif;font-size:10px;font-weight:400;text-anchor:start;dominant-baseline:auto">SISTEMA DE PUNTO DE VENTA</text>
+
+<text x="640" y="270" text-anchor="end" style="font-family:Arial;font-size:11px;fill:#6b7280;;fill:rgb(107, 114, 128);stroke:none;color:rgb(255, 255, 255);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:1;font-family:Arial;font-size:11px;font-weight:400;text-anchor:end;dominant-baseline:auto">versión sobre fondo oscuro →</text>
+
+</svg>

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
-import { iaService, ventasService } from '../../services/api'
+import { iaService, ventasService, inventarioService, productosService } from '../../services/api'
 import GraficaVentas from './components/GraficaVentas'
+
 
 // ── Iconos ──────────────────────────────────────────────────
 const IconIA    = () => <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M12 2a10 10 0 1 0 10 10"/><path d="M12 6v6l4 2"/><circle cx="18" cy="6" r="3" fill="currentColor" opacity=".3"/></svg>
@@ -346,6 +347,232 @@ function TabReportes() {
   )
 }
 
+// ── Tab Movimientos ──────────────────────────────────────────
+function TabMovimientos() {
+  const [productos,    setProductos]    = useState([])
+  const [movimientos,  setMovimientos]  = useState([])
+  const [loading,      setLoading]      = useState(false)
+  const [filtros, setFiltros] = useState({
+    producto_id: '',
+    fecha_desde: '',
+    fecha_hasta: '',
+    tipo: '',
+  })
+
+  useEffect(() => {
+    productosService.listar({ page_size: 1000 })
+      .then(({ data }) => setProductos(data.results || data))
+      .catch(console.error)
+  }, [])
+
+  const buscar = async () => {
+    setLoading(true)
+    try {
+      const params = {}
+      if (filtros.producto_id) params.producto_id = filtros.producto_id
+      if (filtros.fecha_desde) params.fecha_desde = filtros.fecha_desde
+      if (filtros.fecha_hasta) params.fecha_hasta = filtros.fecha_hasta
+      if (filtros.tipo)        params.tipo        = filtros.tipo
+      const { data } = await inventarioService.movimientos(params)
+      setMovimientos(data.results || data)
+    } catch (err) {
+      console.error(err)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const TIPOS = {
+    ENTRADA:    { label: 'Entrada',    color: '#4ade80' },
+    SALIDA:     { label: 'Salida',     color: '#f87171' },
+    AJUSTE_POS: { label: 'Ajuste +',  color: '#06b6d4' },
+    AJUSTE_NEG: { label: 'Ajuste −',  color: '#f59e0b' },
+    DEVOLUCION: { label: 'Devolución', color: '#a78bfa' },
+  }
+
+  const totalEntradas = movimientos
+    .filter(m => ['ENTRADA','DEVOLUCION','AJUSTE_POS'].includes(m.tipo_movimiento))
+    .reduce((s, m) => s + parseFloat(m.cantidad), 0)
+
+  const totalSalidas = movimientos
+    .filter(m => ['SALIDA','AJUSTE_NEG'].includes(m.tipo_movimiento))
+    .reduce((s, m) => s + parseFloat(m.cantidad), 0)
+
+    const exportarExcel = () => {
+    if (!movimientos.length) return
+
+    const headers = ['Fecha', 'Producto', 'Tipo', 'Cantidad', 'Stock anterior', 'Stock nuevo', 'Motivo', 'Usuario']
+    const rows = movimientos.map(m => [
+      new Date(m.created_at).toLocaleDateString('es-CO', { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit' }),
+      m.producto_nombre || m.producto,
+      TIPOS[m.tipo_movimiento]?.label || m.tipo_movimiento,
+      ((['SALIDA','AJUSTE_NEG'].includes(m.tipo_movimiento) ? '-' : '+') + parseFloat(m.cantidad)),
+      parseFloat(m.stock_anterior),
+      parseFloat(m.stock_nuevo),
+      m.motivo || '',
+      m.usuario_nombre || '',
+    ])
+
+    const csv = [headers, ...rows]
+      .map(row => row.map(c => `"${String(c).replace(/"/g, '""')}"`).join(','))
+      .join('\n')
+
+    const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' })
+    const url  = URL.createObjectURL(blob)
+    const a    = document.createElement('a')
+    a.href     = url
+    a.download = `movimientos_${new Date().toISOString().slice(0,10)}.csv`
+    a.click()
+    URL.revokeObjectURL(url)
+  }
+
+  return (
+    <div className="space-y-4">
+
+      {/* Filtros */}
+      <div className="glass rounded-2xl p-4 space-y-3">
+        <p className="text-xs font-bold uppercase tracking-wider" style={{ color: 'rgba(196,181,253,0.5)' }}>
+          Filtros de búsqueda
+        </p>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <select
+            value={filtros.producto_id}
+            onChange={e => setFiltros(f => ({ ...f, producto_id: e.target.value }))}
+            className="input-pos px-3 py-2.5 rounded-xl text-sm"
+            style={{ background: '#1e1b4b', color: '#e2e8f0' }}
+          >
+            <option value="">Todos los productos</option>
+            {productos.map(p => (
+              <option key={p.id} value={p.id}>{p.nombre}</option>
+            ))}
+          </select>
+
+          <select
+            value={filtros.tipo}
+            onChange={e => setFiltros(f => ({ ...f, tipo: e.target.value }))}
+            className="input-pos px-3 py-2.5 rounded-xl text-sm"
+            style={{ background: '#1e1b4b', color: '#e2e8f0' }}
+          >
+            <option value="">Todos los tipos</option>
+            {Object.entries(TIPOS).map(([k, v]) => (
+              <option key={k} value={k}>{v.label}</option>
+            ))}
+          </select>
+
+          <input
+            type="date" value={filtros.fecha_desde}
+            onChange={e => setFiltros(f => ({ ...f, fecha_desde: e.target.value }))}
+            className="input-pos px-3 py-2.5 rounded-xl text-sm"
+          />
+          <input
+            type="date" value={filtros.fecha_hasta}
+            onChange={e => setFiltros(f => ({ ...f, fecha_hasta: e.target.value }))}
+            className="input-pos px-3 py-2.5 rounded-xl text-sm"
+          />
+        </div>
+       <div className="flex gap-2">
+          <button
+            onClick={buscar}
+            disabled={loading}
+            className="btn-primary px-5 py-2.5 rounded-xl text-sm font-bold text-white disabled:opacity-50"
+          >
+            {loading ? 'Buscando...' : '🔍 Buscar movimientos'}
+          </button>
+          <button
+            onClick={exportarExcel}
+            disabled={!movimientos.length}
+            className="px-5 py-2.5 rounded-xl text-sm font-bold disabled:opacity-30 transition-all"
+            style={{ background: 'rgba(74,222,128,0.1)', color: '#4ade80', border: '1px solid rgba(74,222,128,0.2)' }}
+          >
+            📥 Exportar Excel
+          </button>
+        </div>
+      </div>
+
+      {/* Resumen */}
+      {movimientos.length > 0 && (
+        <div className="grid grid-cols-3 gap-3">
+          {[
+            { label: 'Total movimientos', value: movimientos.length, color: '#a78bfa' },
+            { label: 'Total entradas',    value: totalEntradas.toLocaleString('es-CO') + ' uds', color: '#4ade80' },
+            { label: 'Total salidas',     value: totalSalidas.toLocaleString('es-CO') + ' uds',  color: '#f87171' },
+          ].map(s => (
+            <div key={s.label} className="glass rounded-2xl p-4 text-center">
+              <p className="text-xl font-black" style={{ color: s.color, fontFamily: 'Syne, sans-serif' }}>
+                {s.value}
+              </p>
+              <p className="text-xs mt-1" style={{ color: 'rgba(196,181,253,0.4)' }}>{s.label}</p>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Tabla */}
+      {movimientos.length > 0 ? (
+        <div className="glass rounded-2xl overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr style={{ borderBottom: '1px solid rgba(139,92,246,0.15)' }}>
+                  {['Fecha', 'Producto', 'Tipo', 'Cantidad', 'Stock ant.', 'Stock nuevo', 'Motivo', 'Usuario'].map(h => (
+                    <th key={h} className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider"
+                        style={{ color: 'rgba(196,181,253,0.4)' }}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {movimientos.map((m, i) => {
+                  const tipo = TIPOS[m.tipo_movimiento] || { label: m.tipo_movimiento, color: '#a78bfa' }
+                  return (
+                    <tr key={m.id} style={{
+                      borderBottom: '1px solid rgba(139,92,246,0.07)',
+                      background: i % 2 === 0 ? 'transparent' : 'rgba(139,92,246,0.02)',
+                    }}>
+                      <td className="px-4 py-3 text-xs" style={{ color: 'rgba(196,181,253,0.6)' }}>
+                        {new Date(m.created_at).toLocaleDateString('es-CO', { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit' })}
+                      </td>
+                      <td className="px-4 py-3 text-sm text-white font-medium">{m.producto_nombre || m.producto}</td>
+                      <td className="px-4 py-3">
+                        <span className="text-xs font-bold px-2 py-1 rounded-lg"
+                              style={{ background: tipo.color + '18', color: tipo.color }}>
+                          {tipo.label}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 text-sm font-bold" style={{ color: tipo.color }}>
+                        {['SALIDA','AJUSTE_NEG'].includes(m.tipo_movimiento) ? '−' : '+'}{parseFloat(m.cantidad)}
+                      </td>
+                      <td className="px-4 py-3 text-sm" style={{ color: 'rgba(196,181,253,0.5)' }}>
+                        {parseFloat(m.stock_anterior)}
+                      </td>
+                      <td className="px-4 py-3 text-sm font-bold text-white">{parseFloat(m.stock_nuevo)}</td>
+                      <td className="px-4 py-3 text-xs" style={{ color: 'rgba(196,181,253,0.5)' }}>
+                        {m.motivo || '—'}
+                      </td>
+                      <td className="px-4 py-3 text-xs" style={{ color: 'rgba(196,181,253,0.5)' }}>
+                        {m.usuario_nombre || '—'}
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      ) : (
+        !loading && (
+          <div className="glass rounded-2xl flex flex-col items-center justify-center py-16 gap-3">
+            <p className="text-3xl">📦</p>
+            <p className="text-sm font-medium text-white">Aplica los filtros y busca movimientos</p>
+            <p className="text-xs" style={{ color: 'rgba(196,181,253,0.4)' }}>
+              Selecciona un producto o rango de fechas y presiona Buscar
+            </p>
+          </div>
+        )
+      )}
+    </div>
+  )
+}
+
 // ── Tab IA ───────────────────────────────────────────────────
 function TabIA() {
   const [estadoIA, setEstadoIA] = useState(null)
@@ -396,8 +623,9 @@ export default function Reportes() {
       <div className="glass rounded-2xl overflow-hidden">
         <div className="flex" style={{ borderBottom: '1px solid rgba(139,92,246,0.1)' }}>
           {[
-            { id: 'reportes', label: '📊 Reportes' },
-            { id: 'ia',       label: '🤖 Asistente IA' },
+            { id: 'reportes',     label: '📊 Reportes' },
+            { id: 'movimientos',  label: '📦 Movimientos' },
+            { id: 'ia',           label: '🤖 Asistente IA' },
           ].map(t => (
             <button key={t.id} onClick={() => setTab(t.id)}
                     className="flex-1 py-4 text-sm font-semibold transition-all"
@@ -414,8 +642,9 @@ export default function Reportes() {
         </div>
 
         <div className="p-5">
-          {tab === 'reportes' && <TabReportes />}
-          {tab === 'ia'       && <TabIA />}
+          {tab === 'reportes'    && <TabReportes />}
+          {tab === 'movimientos' && <TabMovimientos />}
+          {tab === 'ia'          && <TabIA />}
         </div>
       </div>
 
