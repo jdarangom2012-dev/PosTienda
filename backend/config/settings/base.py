@@ -8,7 +8,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent.parent
 SECRET_KEY = config('SECRET_KEY')
 DEBUG = config('DEBUG', default=False, cast=bool)
 OPENAI_API_KEY = config('OPENAI_API_KEY', default='')
-CREDITO_TOPE_MAXIMO = float(config('CREDITO_TOPE_MAXIMO', default=50000))
+CREDITO_TOPE_MAXIMO = float(config('CREDITO_TOPE_MAXIMO', default=50000000))
 
 INSTALLED_APPS = [
     'django.contrib.admin',

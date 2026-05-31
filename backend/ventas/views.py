@@ -54,8 +54,15 @@ class VentaViewSet(TiendaMixin, viewsets.ReadOnlyModelViewSet):
         cajero_id = self.request.query_params.get('cajero_id')
         estado    = self.request.query_params.get('estado')
 
+        fecha_desde = self.request.query_params.get('fecha_desde')
+        fecha_hasta = self.request.query_params.get('fecha_hasta')
+
         if fecha:
             qs = qs.filter(fecha_hora__date=fecha)
+        if fecha_desde:
+            qs = qs.filter(fecha_hora__date__gte=fecha_desde)
+        if fecha_hasta:
+            qs = qs.filter(fecha_hora__date__lte=fecha_hasta)
         if cajero_id:
             qs = qs.filter(usuario_id=cajero_id)
         if estado:
@@ -192,7 +199,84 @@ class VentaViewSet(TiendaMixin, viewsets.ReadOnlyModelViewSet):
                 for p in pagos_semana
             ],
         })
+    @action(detail=False, methods=['get'], url_path='resumen-periodo')
+    def resumen_periodo(self, request):
+        fecha_desde = request.query_params.get('fecha_desde')
+        fecha_hasta = request.query_params.get('fecha_hasta')
+        tienda      = self.get_tienda()
 
+        if not fecha_desde or not fecha_hasta:
+            return Response({'error': 'Debes enviar fecha_desde y fecha_hasta.'}, status=400)
+
+        qs = self.get_queryset().filter(
+            fecha_hora__date__gte=fecha_desde,
+            fecha_hora__date__lte=fecha_hasta,
+            estado='COMPLETADA',
+        )
+
+        agg = qs.aggregate(
+            total_ingresos=Sum('total'),
+            total_ventas=Count('id'),
+        )
+        total_ingresos = float(agg['total_ingresos'] or 0)
+        total_ventas   = agg['total_ventas'] or 0
+
+        por_dia = [
+            {
+                'fecha':    str(d['fecha_hora__date']),
+                'ingresos': float(d['ingresos'] or 0),
+                'cantidad': d['cantidad'],
+            }
+            for d in qs.values('fecha_hora__date').annotate(
+                ingresos=Sum('total'),
+                cantidad=Count('id'),
+            ).order_by('fecha_hora__date')
+        ]
+
+        detalle_filter = {
+            'venta__fecha_hora__date__gte': fecha_desde,
+            'venta__fecha_hora__date__lte': fecha_hasta,
+            'venta__estado': 'COMPLETADA',
+        }
+        if tienda:
+            detalle_filter['venta__tienda'] = tienda
+
+        top_productos = VentaDetalle.objects.filter(
+            **detalle_filter
+        ).values('producto__nombre').annotate(
+            total_vendido=Sum('cantidad'),
+            total_ingresos=Sum('subtotal'),
+        ).order_by('-total_vendido')[:10]
+
+        por_forma_pago = VentaPago.objects.filter(
+            **detalle_filter
+        ).values('forma_pago__nombre').annotate(
+            total=Sum('monto'),
+        ).order_by('-total')
+
+        canceladas = self.get_queryset().filter(
+            fecha_hora__date__gte=fecha_desde,
+            fecha_hora__date__lte=fecha_hasta,
+            estado='CANCELADA',
+        ).count()
+
+        return Response({
+            'desde':             fecha_desde,
+            'hasta':             fecha_hasta,
+            'total_ventas':      total_ventas,
+            'total_ingresos':    total_ingresos,
+            'ticket_promedio':   total_ingresos / max(total_ventas, 1),
+            'ventas_canceladas': canceladas,
+            'por_dia':           por_dia,
+            'top_productos':     list(top_productos),
+            'por_forma_pago': [
+                {
+                    'forma_pago_nombre': p['forma_pago__nombre'],
+                    'total':             float(p['total'] or 0),
+                }
+                for p in por_forma_pago
+            ],
+        })
 
 class ProcesarVentaView(APIView):
     permission_classes = [IsAuthenticated]

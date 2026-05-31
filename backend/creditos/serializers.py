@@ -1,8 +1,5 @@
-# ============================================================
-# APP: creditos → creditos/serializers.py
-# ============================================================
+# creditos/serializers.py
 from rest_framework import serializers
-from django.conf import settings
 from .models import Credito, AbonoCredito
 
 
@@ -20,6 +17,23 @@ class CreditoSerializer(serializers.ModelSerializer):
     saldo_pendiente = serializers.ReadOnlyField()
     esta_pagado     = serializers.ReadOnlyField()
     usuario_nombre  = serializers.CharField(source='usuario.nombre_completo', read_only=True)
+    productos_venta = serializers.SerializerMethodField()
+
+    def get_productos_venta(self, obj):
+        if not obj.venta_id:
+            return []
+        try:
+            detalles = obj.venta.detalle.select_related('producto').all()
+            return [
+                {
+                    'nombre':   d.producto.nombre,
+                    'cantidad': float(d.cantidad),
+                    'precio':   float(d.precio_unit),
+                }
+                for d in detalles
+            ]
+        except Exception:
+            return []
 
     class Meta:
         model  = Credito
@@ -28,11 +42,13 @@ class CreditoSerializer(serializers.ModelSerializer):
             'total_deuda', 'total_abonado', 'saldo_pendiente',
             'estado', 'esta_pagado', 'notas',
             'usuario_nombre', 'venta',
+            'productos_venta',
             'abonos', 'created_at', 'updated_at'
         )
         read_only_fields = ('id', 'total_abonado', 'estado', 'created_at', 'updated_at')
 
 
+# ← Fuera de CreditoSerializer, al mismo nivel
 class CrearCreditoSerializer(serializers.Serializer):
     cliente_nombre   = serializers.CharField(max_length=200)
     cliente_telefono = serializers.CharField(max_length=20, required=False, allow_blank=True)

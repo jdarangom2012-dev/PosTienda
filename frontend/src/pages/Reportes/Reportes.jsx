@@ -360,12 +360,28 @@ function TabMovimientos() {
   })
 
   useEffect(() => {
-    productosService.listar({ page_size: 1000 })
-      .then(({ data }) => setProductos(data.results || data))
-      .catch(console.error)
+    // Traer todos los productos sin límite de paginación
+    const cargarTodos = async () => {
+      try {
+        let todos = []
+        let pagina = 1
+        let hayMas = true
+        while (hayMas) {
+          const { data } = await productosService.listar({ page_size: 100, page: pagina })
+          const resultados = data.results || data
+          todos = [...todos, ...resultados]
+          hayMas = !!data.next
+          pagina++
+        }
+        setProductos(todos)
+      } catch (err) {
+        console.error(err)
+      }
+    }
+    cargarTodos()
   }, [])
 
-  const buscar = async () => {
+   const buscar = async () => {
     setLoading(true)
     try {
       const params = {}
@@ -573,6 +589,361 @@ function TabMovimientos() {
   )
 }
 
+// ── Tab Consultas ────────────────────────────────────────────
+function TabConsultas() {
+  const fmt = (v) => `$${parseFloat(v || 0).toLocaleString('es-CO')}`
+  const hoy = new Date().toISOString().slice(0, 10)
+
+  // ── Sección 1: Ventas por período ──
+  const [fechaDesde,   setFechaDesde]   = useState(hoy)
+  const [fechaHasta,   setFechaHasta]   = useState(hoy)
+  const [resumen,      setResumen]      = useState(null)
+  const [loadingV,     setLoadingV]     = useState(false)
+
+  const buscarVentas = async () => {
+    if (!fechaDesde || !fechaHasta) return
+    setLoadingV(true)
+    try {
+      const { data } = await ventasService.resumenPeriodo({ fecha_desde: fechaDesde, fecha_hasta: fechaHasta })
+      setResumen(data)
+    } catch (err) { console.error(err) }
+    finally { setLoadingV(false) }
+  }
+
+  const exportarVentas = () => {
+    if (!resumen?.top_productos?.length) return
+    const headers = ['Producto', 'Unidades vendidas', 'Total ingresos']
+    const rows = resumen.top_productos.map(p => [
+      p.producto__nombre,
+      parseFloat(p.total_vendido),
+      parseFloat(p.total_ingresos),
+    ])
+    const csv = [headers, ...rows]
+      .map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(','))
+      .join('\n')
+    const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' })
+    const a = document.createElement('a')
+    a.href = URL.createObjectURL(blob)
+    a.download = `ventas_${fechaDesde}_${fechaHasta}.csv`
+    a.click()
+  }
+
+  // ── Sección 2: Inventario en fecha ──
+  const [fechaInvDesde, setFechaInvDesde] = useState(hoy)
+  const [fechaInvHasta, setFechaInvHasta] = useState(hoy)
+  const [inventario,   setInventario]   = useState([])
+  const [loadingI,     setLoadingI]     = useState(false)
+  const [paginaInv,    setPaginaInv]    = useState(1)
+  const [busquedaInv,  setBusquedaInv]  = useState('')
+  const INV_POR_PAGINA = 20
+
+  const inventarioFiltrado = inventario.filter(p =>
+    p.producto_nombre?.toLowerCase().includes(busquedaInv.toLowerCase()) ||
+    p.categoria_nombre?.toLowerCase().includes(busquedaInv.toLowerCase())
+  )
+  const totalPaginasInv = Math.ceil(inventarioFiltrado.length / INV_POR_PAGINA)
+  const inventarioPagina = inventarioFiltrado.slice((paginaInv - 1) * INV_POR_PAGINA, paginaInv * INV_POR_PAGINA)
+
+  const [paginaProd, setPaginaProd] = useState(1)
+  const PROD_POR_PAGINA = 10
+
+  const topProductosPagina = (resumen?.top_productos || []).slice(
+    (paginaProd - 1) * PROD_POR_PAGINA,
+    paginaProd * PROD_POR_PAGINA
+  )
+  const totalPaginasProd = Math.ceil((resumen?.top_productos?.length || 0) / PROD_POR_PAGINA)
+  const buscarInventario = async () => {
+    setLoadingI(true)
+    try {
+      const { data } = await inventarioService.listar({ page_size: 2000 })
+      const productos = data.results || data
+      setInventario(productos)
+    } catch (err) { console.error(err) }
+    finally { setLoadingI(false) }
+  }
+
+  const exportarInventario = () => {
+    if (!inventario.length) return
+    const headers = ['Producto', 'Categoría', 'Stock', 'Stock mínimo', 'Estado']
+    const rows = inventario.map(p => [
+      p.producto?.nombre || p.nombre,
+      p.producto?.categoria_nombre || '—',
+      parseFloat(p.cantidad_actual),
+      parseFloat(p.producto?.stock_minimo || 0),
+      parseFloat(p.cantidad_actual) <= parseFloat(p.producto?.stock_minimo || 0) ? 'BAJO MÍNIMO' : 'OK',
+    ])
+    const csv = [headers, ...rows]
+      .map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(','))
+      .join('\n')
+    const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' })
+    const a = document.createElement('a')
+    a.href = URL.createObjectURL(blob)
+    a.download = `inventario_${fechaInvDesde}_${fechaInvHasta}.csv`
+    a.click()
+  }
+
+  return (
+    <div className="space-y-6">
+
+      {/* ── VENTAS POR PERÍODO ── */}
+      <div className="glass rounded-2xl p-5 space-y-4">
+        <h3 className="text-base font-bold text-white" style={{ fontFamily: 'Syne, sans-serif' }}>
+          📅 Ventas por período
+        </h3>
+
+        {/* Filtros fecha */}
+        <div className="flex flex-wrap gap-3 items-end">
+          <div>
+            <p className="text-xs mb-1" style={{ color: 'rgba(196,181,253,0.4)' }}>Desde</p>
+            <input type="date" value={fechaDesde}
+                   onChange={e => setFechaDesde(e.target.value)}
+                   className="input-pos px-3 py-2.5 rounded-xl text-sm" />
+          </div>
+          <div>
+            <p className="text-xs mb-1" style={{ color: 'rgba(196,181,253,0.4)' }}>Hasta</p>
+            <input type="date" value={fechaHasta}
+                   onChange={e => setFechaHasta(e.target.value)}
+                   className="input-pos px-3 py-2.5 rounded-xl text-sm" />
+          </div>
+          <button onClick={buscarVentas} disabled={loadingV}
+                  className="btn-primary px-5 py-2.5 rounded-xl text-sm font-bold text-white disabled:opacity-50">
+            {loadingV ? 'Consultando...' : '🔍 Consultar'}
+          </button>
+          {resumen && (
+            <button onClick={exportarVentas}
+                    className="px-5 py-2.5 rounded-xl text-sm font-bold"
+                    style={{ background: 'rgba(74,222,128,0.1)', color: '#4ade80', border: '1px solid rgba(74,222,128,0.2)' }}>
+              📥 Exportar Excel
+            </button>
+          )}
+        </div>
+
+        {/* Resultados */}
+        {resumen && (
+          <div className="space-y-4">
+            {/* Cards */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              {[
+                { label: 'Total ventas',      value: resumen.total_ventas,                color: '#8b5cf6' },
+                { label: 'Total ingresos',    value: fmt(resumen.total_ingresos),          color: '#4ade80' },
+                { label: 'Ticket promedio',   value: fmt(resumen.ticket_promedio),         color: '#06b6d4' },
+                { label: 'Canceladas',        value: resumen.ventas_canceladas,            color: '#f87171' },
+              ].map(c => (
+                <div key={c.label} className="rounded-xl p-3"
+                     style={{ background: 'rgba(139,92,246,0.06)', border: '1px solid rgba(139,92,246,0.12)' }}>
+                  <p className="text-xs mb-1" style={{ color: 'rgba(196,181,253,0.4)' }}>{c.label}</p>
+                  <p className="text-lg font-black" style={{ color: c.color, fontFamily: 'Syne, sans-serif' }}>{c.value}</p>
+                </div>
+              ))}
+            </div>
+
+            {/* Top productos + Formas de pago */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <p className="text-xs font-bold uppercase tracking-wider mb-3"
+                   style={{ color: 'rgba(196,181,253,0.4)' }}>🏆 Top productos</p>
+                <div className="space-y-2">
+                  {topProductosPagina.map((p, i) => (
+                    <div key={i} className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-bold w-5 text-center"
+                              style={{ color: i === 0 && paginaProd === 1 ? '#f59e0b' : 'rgba(196,181,253,0.3)' }}>
+                          {(paginaProd - 1) * PROD_POR_PAGINA + i + 1}
+                        </span>
+                        <span className="text-sm text-white">{p.producto__nombre}</span>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-xs font-bold" style={{ color: '#a78bfa' }}>{parseFloat(p.total_vendido)} uds</p>
+                        <p className="text-xs" style={{ color: 'rgba(196,181,253,0.4)' }}>{fmt(p.total_ingresos)}</p>
+                      </div>
+                    </div>
+                  ))}
+                  {totalPaginasProd > 1 && (
+                    <div className="flex items-center justify-between pt-2"
+                         style={{ borderTop: '1px solid rgba(139,92,246,0.1)' }}>
+                      <button onClick={() => setPaginaProd(p => Math.max(1, p - 1))}
+                              disabled={paginaProd === 1}
+                              className="text-xs px-2 py-1 rounded-lg disabled:opacity-30"
+                              style={{ background: 'rgba(139,92,246,0.1)', color: '#a78bfa' }}>← Ant</button>
+                      <span className="text-xs" style={{ color: 'rgba(196,181,253,0.4)' }}>
+                        {paginaProd} / {totalPaginasProd}
+                      </span>
+                      <button onClick={() => setPaginaProd(p => Math.min(totalPaginasProd, p + 1))}
+                              disabled={paginaProd === totalPaginasProd}
+                              className="text-xs px-2 py-1 rounded-lg disabled:opacity-30"
+                              style={{ background: 'rgba(139,92,246,0.1)', color: '#a78bfa' }}>Sig →</button>
+                    </div>
+                  )}
+                  {!resumen.top_productos?.length && (
+                    <p className="text-xs" style={{ color: 'rgba(196,181,253,0.3)' }}>Sin datos</p>
+                  )}
+                </div>
+              </div>
+              <div>
+                <p className="text-xs font-bold uppercase tracking-wider mb-3"
+                   style={{ color: 'rgba(196,181,253,0.4)' }}>💳 Formas de pago</p>
+                <div className="space-y-2">
+                  {resumen.por_forma_pago?.map((p, i) => {
+                    const pct = Math.round((p.total / (resumen.total_ingresos || 1)) * 100)
+                    return (
+                      <div key={i}>
+                        <div className="flex justify-between text-xs mb-1">
+                          <span className="text-white">{p.forma_pago_nombre}</span>
+                          <span style={{ color: '#a78bfa' }}>{fmt(p.total)} ({pct}%)</span>
+                        </div>
+                        <div className="h-1.5 rounded-full overflow-hidden" style={{ background: 'rgba(139,92,246,0.1)' }}>
+                          <div className="h-full rounded-full"
+                               style={{ width: `${pct}%`, background: 'linear-gradient(90deg, #7c3aed, #a855f7)' }} />
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {!resumen && !loadingV && (
+          <div className="flex flex-col items-center justify-center py-8 gap-2">
+            <p className="text-2xl">📅</p>
+            <p className="text-sm text-white">Selecciona un rango de fechas y presiona Consultar</p>
+          </div>
+        )}
+      </div>
+
+      {/* ── INVENTARIO EN FECHA ── */}
+      <div className="glass rounded-2xl p-5 space-y-4">
+        <h3 className="text-base font-bold text-white" style={{ fontFamily: 'Syne, sans-serif' }}>
+          📦 Inventario en fecha
+        </h3>
+
+        <div className="flex flex-wrap gap-3 items-end">
+          <div>
+            <p className="text-xs mb-1" style={{ color: 'rgba(196,181,253,0.4)' }}>Desde</p>
+            <input type="date" value={fechaInvDesde}
+                   onChange={e => setFechaInvDesde(e.target.value)}
+                   className="input-pos px-3 py-2.5 rounded-xl text-sm" />
+          </div>
+          <div>
+            <p className="text-xs mb-1" style={{ color: 'rgba(196,181,253,0.4)' }}>Hasta</p>
+            <input type="date" value={fechaInvHasta}
+                   onChange={e => setFechaInvHasta(e.target.value)}
+                   className="input-pos px-3 py-2.5 rounded-xl text-sm" />
+          </div>
+          <div className="relative">
+            <input
+              type="text"
+              value={busquedaInv}
+              onChange={e => { setBusquedaInv(e.target.value); setPaginaInv(1) }}
+              placeholder="Buscar producto..."
+              className="input-pos px-3 py-2.5 rounded-xl text-sm w-52"
+            />
+          </div>
+          <button onClick={buscarInventario} disabled={loadingI}
+                  className="btn-primary px-5 py-2.5 rounded-xl text-sm font-bold text-white disabled:opacity-50">
+            {loadingI ? 'Consultando...' : '🔍 Ver inventario'}
+          </button>
+          {inventario.length > 0 && (
+            <button onClick={exportarInventario}
+                    className="px-5 py-2.5 rounded-xl text-sm font-bold"
+                    style={{ background: 'rgba(74,222,128,0.1)', color: '#4ade80', border: '1px solid rgba(74,222,128,0.2)' }}>
+              📥 Exportar Excel
+            </button>
+          )}
+        </div>
+
+        {inventario.length > 0 && (
+          <div className="overflow-x-auto rounded-xl" style={{ border: '1px solid rgba(139,92,246,0.12)' }}>
+            <table className="w-full">
+              <thead>
+                <tr style={{ borderBottom: '1px solid rgba(139,92,246,0.15)' }}>
+                  {['Producto', 'Categoría', 'Stock', 'Stock mín.', 'Estado'].map(h => (
+                    <th key={h} className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider"
+                        style={{ color: 'rgba(196,181,253,0.4)' }}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {inventarioPagina.map((p, i) => {
+                  const stock  = parseFloat(p.cantidad_actual)
+                  const minimo = parseFloat(p.stock_minimo || 0)
+                  const bajo   = stock <= minimo
+                  return (
+                    <tr key={i} style={{
+                      borderBottom: '1px solid rgba(139,92,246,0.07)',
+                      background: i % 2 === 0 ? 'transparent' : 'rgba(139,92,246,0.02)',
+                    }}>
+                     <td className="px-4 py-2.5 text-sm text-white font-medium">{p.producto_nombre}</td>
+                    <td className="px-4 py-2.5 text-xs" style={{ color: 'rgba(196,181,253,0.5)' }}>
+                      {p.categoria_nombre || '—'}
+                    </td>
+                    <td className="px-4 py-2.5 text-sm font-bold"
+                        style={{ color: bajo ? '#f87171' : '#4ade80' }}>
+                      {stock}
+                    </td>
+                    <td className="px-4 py-2.5 text-xs" style={{ color: 'rgba(196,181,253,0.4)' }}>{p.stock_minimo}</td>
+                      <td className="px-4 py-2.5">
+                        <span className="text-xs px-2 py-0.5 rounded-lg font-medium"
+                              style={bajo
+                                ? { background: 'rgba(239,68,68,0.1)', color: '#f87171' }
+                                : { background: 'rgba(74,222,128,0.1)', color: '#4ade80' }}>
+                          {bajo ? '⚠️ Bajo mínimo' : '✓ OK'}
+                        </span>
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+            {totalPaginasInv > 1 && (
+          <div className="flex items-center justify-between px-2 pt-3">
+            <p className="text-xs" style={{ color: 'rgba(196,181,253,0.4)' }}>
+              {inventarioFiltrado.length} productos · Página {paginaInv} de {totalPaginasInv}
+            </p>
+            <div className="flex gap-2">
+              <button onClick={() => setPaginaInv(p => Math.max(1, p - 1))}
+                      disabled={paginaInv === 1}
+                      className="px-3 py-1.5 rounded-lg text-xs font-bold disabled:opacity-30"
+                      style={{ background: 'rgba(139,92,246,0.1)', color: '#a78bfa' }}>
+                ← Anterior
+              </button>
+              {Array.from({ length: Math.min(5, totalPaginasInv) }, (_, i) => {
+                const p = paginaInv <= 3 ? i + 1 : paginaInv - 2 + i
+                if (p < 1 || p > totalPaginasInv) return null
+                return (
+                  <button key={p} onClick={() => setPaginaInv(p)}
+                          className="w-8 h-8 rounded-lg text-xs font-bold"
+                          style={p === paginaInv
+                            ? { background: '#7c3aed', color: 'white' }
+                            : { background: 'rgba(139,92,246,0.1)', color: '#a78bfa' }}>
+                    {p}
+                  </button>
+                )
+              })}
+              <button onClick={() => setPaginaInv(p => Math.min(totalPaginasInv, p + 1))}
+                      disabled={paginaInv === totalPaginasInv}
+                      className="px-3 py-1.5 rounded-lg text-xs font-bold disabled:opacity-30"
+                      style={{ background: 'rgba(139,92,246,0.1)', color: '#a78bfa' }}>
+                Siguiente →
+              </button>
+            </div>
+          </div>
+        )}
+          </div>
+        )}
+
+        {!inventario.length && !loadingI && (
+          <div className="flex flex-col items-center justify-center py-8 gap-2">
+            <p className="text-2xl">📦</p>
+            <p className="text-sm text-white">Selecciona una fecha y presiona Ver inventario</p>
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
 // ── Tab IA ───────────────────────────────────────────────────
 function TabIA() {
   const [estadoIA, setEstadoIA] = useState(null)
@@ -626,6 +997,7 @@ export default function Reportes() {
             { id: 'reportes',     label: '📊 Reportes' },
             { id: 'movimientos',  label: '📦 Movimientos' },
             { id: 'ia',           label: '🤖 Asistente IA' },
+            { id: 'consultas',    label: '🔎 Consultas' },
           ].map(t => (
             <button key={t.id} onClick={() => setTab(t.id)}
                     className="flex-1 py-4 text-sm font-semibold transition-all"
@@ -645,6 +1017,7 @@ export default function Reportes() {
           {tab === 'reportes'    && <TabReportes />}
           {tab === 'movimientos' && <TabMovimientos />}
           {tab === 'ia'          && <TabIA />}
+          {tab === 'consultas'   && <TabConsultas />}
         </div>
       </div>
 

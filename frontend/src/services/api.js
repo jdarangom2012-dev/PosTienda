@@ -127,6 +127,7 @@ export const ventasService = {
   resumenHoy:    ()       => api.get('/ventas/historial/resumen-hoy/'),
   resumenSemana: ()       => api.get('/ventas/historial/resumen-semana/'),
   formasPago:    ()       => api.get('/ventas/formas-pago/activas/'),
+  resumenPeriodo: (params) => api.get('/ventas/historial/resumen-periodo/', { params }),
 }
 
 // Servicios de IA

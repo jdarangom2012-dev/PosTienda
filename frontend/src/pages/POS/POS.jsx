@@ -12,12 +12,49 @@ export default function POS() {
   const [modalPago,     setModalPago]     = useState(false)
   const [ventaExitosa,  setVentaExitosa]  = useState(null)
   const [cambio,        setCambio]        = useState(0)
+  const [cuentas,       setCuentas]       = useState(() => {
+    try { return JSON.parse(localStorage.getItem('pos_cuentas') || '[]') }
+    catch { return [] }
+  })
 
+  const guardarCuentas = (nuevasCuentas) => {
+    setCuentas(nuevasCuentas)
+    localStorage.setItem('pos_cuentas', JSON.stringify(nuevasCuentas))
+  }
+
+  const guardarCuenta = () => {
+    if (!carrito.length) return
+    const numero = (cuentas.length > 0 ? Math.max(...cuentas.map(c => c.numero)) : 0) + 1
+    const nueva = {
+      id:      Date.now(),
+      numero,
+      carrito: [...carrito],
+      total:   carrito.reduce((s, i) => s + i.precio_unit * i.cantidad - i.descuento, 0),
+      hora:    new Date().toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' }),
+    }
+    guardarCuentas([...cuentas, nueva])
+    setCarrito([])
+    setTimeout(() => buscadorRef.current?.focus(), 100)
+  }
+
+  const cargarCuenta = (cuenta) => {
+    if (carrito.length > 0) {
+      if (!confirm('¿Reemplazar el carrito actual con esta cuenta?')) return
+    }
+    setCarrito(cuenta.carrito)
+    guardarCuentas(cuentas.filter(c => c.id !== cuenta.id))
+    setTimeout(() => buscadorRef.current?.focus(), 100)
+  }
+
+  const eliminarCuenta = (id) => {
+    guardarCuentas(cuentas.filter(c => c.id !== id))
+  }
+  
   // Calculos
   const subtotal   = carrito.reduce((s, i) => s + (i.precio_unit * i.cantidad), 0)
   const descuentos = carrito.reduce((s, i) => s + i.descuento, 0)
   const total      = subtotal - descuentos
-   // ── Agrega esta ref ──
+
   const buscadorRef = useRef(null)
 
   // Agregar producto al carrito
@@ -191,6 +228,19 @@ export default function POS() {
             </div>
           </div>
         </div>
+         {/* Botón guardar cuenta */}
+        {carrito.length > 0 && (
+          <button
+            onClick={guardarCuenta}
+            className="py-3 rounded-2xl font-bold text-sm transition-all"
+            style={{
+              background: 'rgba(139,92,246,0.12)',
+              border: '1px solid rgba(139,92,246,0.25)',
+              color: '#a78bfa',
+            }}>
+            🧾 Guardar cuenta
+          </button>
+        )}
 
         {/* Botón cobrar */}
         <button
@@ -209,6 +259,44 @@ export default function POS() {
             Cobrar
           </span>
         </button>
+        {/* Cuentas abiertas */}
+        {cuentas.length > 0 && (
+          <div className="glass rounded-2xl p-4 space-y-2">
+            <p className="text-xs font-bold uppercase tracking-wider mb-3"
+               style={{ color: 'rgba(196,181,253,0.4)' }}>
+              🧾 Cuentas abiertas
+            </p>
+            {cuentas.map(c => (
+              <div key={c.id} className="flex items-center justify-between rounded-xl px-3 py-2"
+                   style={{ background: 'rgba(139,92,246,0.08)', border: '1px solid rgba(139,92,246,0.15)' }}>
+                <button onClick={() => cargarCuenta(c)} className="flex-1 text-left">
+                {Object.values(
+                    c.carrito.reduce((acc, item) => {
+                      if (acc[item.producto_id]) {
+                        acc[item.producto_id].cantidad += item.cantidad
+                      } else {
+                        acc[item.producto_id] = { ...item }
+                      }
+                      return acc
+                    }, {})
+                  ).map((item, k) => (
+                    <p key={k} className="text-xs font-bold text-white">
+                      {item.nombre} × {item.cantidad} · ${(item.precio_unit * item.cantidad).toLocaleString('es-CO')}
+                    </p>
+                  ))}
+                  <p className="text-xs" style={{ color: 'rgba(196,181,253,0.4)' }}>
+                    {c.hora} · Total: ${c.total.toLocaleString('es-CO')}
+                  </p>
+                </button>
+                <button onClick={() => eliminarCuenta(c.id)}
+                        className="ml-2 text-xs px-2 py-1 rounded-lg"
+                        style={{ color: '#f87171', background: 'rgba(239,68,68,0.08)' }}>
+                  ✕
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
 
         {/* Atajos de teclado */}
         <div className="glass rounded-2xl p-4">
