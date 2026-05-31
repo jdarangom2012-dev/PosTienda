@@ -246,8 +246,13 @@ export default function Categorias() {
   const [modalForm,    setModalForm]    = useState(false)
   const [categoriaEdit,setCategoriaEdit]= useState(null)
   const [modalEliminar,setModalEliminar]= useState(null)
+  const [pagina,       setPagina]       = useState(1)
+  const ITEMS_POR_PAGINA = 10
+  const categoriasPagina = categorias.slice((pagina - 1) * ITEMS_POR_PAGINA, pagina * ITEMS_POR_PAGINA)
+  const totalPaginas     = Math.ceil(categorias.length / ITEMS_POR_PAGINA)
   const busquedaRef = useRef(null)  // ← AGREGAR
   const cargar = useCallback(async () => {
+    setPagina(1)
     setLoading(true)
     try {
       const params = {}
@@ -419,7 +424,7 @@ export default function Categorias() {
               </tr>
             </thead>
             <tbody>
-              {categorias.map(c => (
+              {categoriasPagina.map(c => (
                 <tr key={c.id}
                     className="transition-all hover:bg-purple-900/10"
                     style={{ borderBottom: '1px solid rgba(139,92,246,0.06)' }}>
@@ -497,6 +502,41 @@ export default function Categorias() {
               ))}
             </tbody>
           </table>
+        )}
+        {totalPaginas > 1 && (
+          <div className="flex items-center justify-between px-4 py-3"
+               style={{ borderTop: '1px solid rgba(139,92,246,0.1)' }}>
+            <p className="text-xs" style={{ color: 'rgba(196,181,253,0.4)' }}>
+              {categorias.length} categorías · Página {pagina} de {totalPaginas}
+            </p>
+            <div className="flex gap-2">
+              <button onClick={() => setPagina(p => Math.max(1, p - 1))}
+                      disabled={pagina === 1}
+                      className="px-3 py-1.5 rounded-lg text-xs font-bold disabled:opacity-30"
+                      style={{ background: 'rgba(139,92,246,0.1)', color: '#a78bfa' }}>
+                ← Anterior
+              </button>
+              {Array.from({ length: Math.min(5, totalPaginas) }, (_, i) => {
+                const p = pagina <= 3 ? i + 1 : pagina - 2 + i
+                if (p < 1 || p > totalPaginas) return null
+                return (
+                  <button key={p} onClick={() => setPagina(p)}
+                          className="w-8 h-8 rounded-lg text-xs font-bold"
+                          style={p === pagina
+                            ? { background: '#7c3aed', color: 'white' }
+                            : { background: 'rgba(139,92,246,0.1)', color: '#a78bfa' }}>
+                    {p}
+                  </button>
+                )
+              })}
+              <button onClick={() => setPagina(p => Math.min(totalPaginas, p + 1))}
+                      disabled={pagina === totalPaginas}
+                      className="px-3 py-1.5 rounded-lg text-xs font-bold disabled:opacity-30"
+                      style={{ background: 'rgba(139,92,246,0.1)', color: '#a78bfa' }}>
+                Siguiente →
+              </button>
+            </div>
+          </div>
         )}
       </div>
 

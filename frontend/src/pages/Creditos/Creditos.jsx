@@ -42,7 +42,15 @@ export default function Creditos() {
   const [resumen,      setResumen]      = useState(null)
   const [detalleCliente, setDetalleCliente] = useState(null) // cliente expandido
 
+  const [pagina,        setPagina]        = useState(1)
+  const ITEMS_POR_PAGINA = 10
+
+  const agrupados       = agruparPorCliente(creditos)
+  const totalPaginas    = Math.ceil(agrupados.length / ITEMS_POR_PAGINA)
+  const agrupadosPagina = agrupados.slice((pagina - 1) * ITEMS_POR_PAGINA, pagina * ITEMS_POR_PAGINA)
+  
   const cargar = useCallback(async () => {
+    setPagina(1)
     setLoading(true)
     try {
       const params = {}
@@ -83,9 +91,6 @@ export default function Creditos() {
     tienePendiente
       ? { bg: 'rgba(245,158,11,0.1)', color: '#f59e0b', label: 'PENDIENTE' }
       : { bg: 'rgba(74,222,128,0.1)', color: '#4ade80', label: 'PAGADO' }
-
-  const agrupados = agruparPorCliente(creditos)
-
   return (
     <div className="space-y-5 animate-fade-in">
 
@@ -182,7 +187,7 @@ export default function Creditos() {
               </tr>
             </thead>
             <tbody>
-              {agrupados.map((g, i) => {
+              {agrupadosPagina.map((g, i) => {
                 const est = colorEstado(g.tiene_pendiente)
                 const expandido = detalleCliente === i
                 return (
@@ -295,6 +300,41 @@ export default function Creditos() {
             </tbody>
           </table>
         )}
+        {totalPaginas > 1 && (
+        <div className="flex items-center justify-between px-4 py-3"
+             style={{ borderTop: '1px solid rgba(139,92,246,0.1)' }}>
+          <p className="text-xs" style={{ color: 'rgba(196,181,253,0.4)' }}>
+            {agrupados.length} clientes · Página {pagina} de {totalPaginas}
+          </p>
+          <div className="flex gap-2">
+            <button onClick={() => setPagina(p => Math.max(1, p - 1))}
+                    disabled={pagina === 1}
+                    className="px-3 py-1.5 rounded-lg text-xs font-bold disabled:opacity-30"
+                    style={{ background: 'rgba(139,92,246,0.1)', color: '#a78bfa' }}>
+              ← Anterior
+            </button>
+            {Array.from({ length: Math.min(5, totalPaginas) }, (_, i) => {
+              const p = pagina <= 3 ? i + 1 : pagina - 2 + i
+              if (p < 1 || p > totalPaginas) return null
+              return (
+                <button key={p} onClick={() => setPagina(p)}
+                        className="w-8 h-8 rounded-lg text-xs font-bold"
+                        style={p === pagina
+                          ? { background: '#7c3aed', color: 'white' }
+                          : { background: 'rgba(139,92,246,0.1)', color: '#a78bfa' }}>
+                  {p}
+                </button>
+              )
+            })}
+            <button onClick={() => setPagina(p => Math.min(totalPaginas, p + 1))}
+                    disabled={pagina === totalPaginas}
+                    className="px-3 py-1.5 rounded-lg text-xs font-bold disabled:opacity-30"
+                    style={{ background: 'rgba(139,92,246,0.1)', color: '#a78bfa' }}>
+              Siguiente →
+            </button>
+          </div>
+        </div>
+      )}
       </div>
 
       {modalAbono && (
