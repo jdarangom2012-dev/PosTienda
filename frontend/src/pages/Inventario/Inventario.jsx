@@ -16,6 +16,9 @@ export default function Inventario() {
   const [busqueda,     setBusqueda]     = useState('')
   const [filtroAlerta, setFiltroAlerta] = useState(false)
   const [modalItem,    setModalItem]    = useState(null)
+  const [busquedaMov,  setBusquedaMov]  = useState('')
+  const [paginaMov,    setPaginaMov]    = useState(1)
+  const MOV_POR_PAGINA = 10
 
   const cargarStock = useCallback(async () => {
     setLoading(true)
@@ -33,17 +36,35 @@ export default function Inventario() {
     }
   }, [busqueda, filtroAlerta])
 
+  const [todosMovimientos, setTodosMovimientos] = useState([])
+
   const cargarMovimientos = useCallback(async () => {
     setLoading(true)
     try {
-      const { data } = await inventarioService.movimientos({ page_size: 50 })
-      setMovimientos(data.results || data)
+      const { data } = await inventarioService.movimientos({ page_size: 500 })
+      setTodosMovimientos(data.results || data)
+      setPaginaMov(1)
     } catch (err) {
       console.error('Error cargando movimientos:', err)
     } finally {
       setLoading(false)
     }
   }, [])
+
+  // Filtrar movimientos localmente por búsqueda
+  useEffect(() => {
+    if (!busquedaMov.trim()) {
+      setMovimientos(todosMovimientos)
+    } else {
+      const q = busquedaMov.toLowerCase()
+      setMovimientos(
+        todosMovimientos.filter(m =>
+          m.producto_nombre?.toLowerCase().includes(q)
+        )
+      )
+    }
+    setPaginaMov(1)
+  }, [busquedaMov, todosMovimientos])
 
   const cargarAlertas = useCallback(async () => {
     try {
@@ -167,6 +188,7 @@ export default function Inventario() {
 
       {/* Tabs */}
       <div className="glass rounded-2xl overflow-hidden">
+
         {/* Tab headers */}
         <div className="flex" style={{ borderBottom: '1px solid rgba(139,92,246,0.1)' }}>
           {[
@@ -193,42 +215,54 @@ export default function Inventario() {
           ))}
         </div>
 
-        {/* Filtros — solo en stock */}
+        {/* Filtros stock */}
         {tab === 'stock' && (
           <div className="flex gap-3 p-4"
                style={{ borderBottom: '1px solid rgba(139,92,246,0.08)' }}>
             <div className="relative flex-1">
-              <div className="absolute left-3 top-1/2 -translate-y-1/2"
-                   style={{ color: '#8b5cf6' }}>
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none"
-                     stroke="currentColor" strokeWidth="2">
+              <div className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: '#8b5cf6' }}>
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <circle cx="11" cy="11" r="8"/>
                   <line x1="21" y1="21" x2="16.65" y2="16.65"/>
                 </svg>
               </div>
-              <input
-                ref={busquedaRef}  // ← AGREGAR
-                type="text"
-                value={busqueda}
-                onChange={e => setBusqueda(e.target.value)}
-                placeholder="Buscar producto..."
-                className="input-pos w-full pl-9 pr-4 py-2.5 rounded-xl text-sm"
-              />
+              <input ref={busquedaRef} type="text" value={busqueda}
+                     onChange={e => setBusqueda(e.target.value)}
+                     placeholder="Buscar producto..."
+                     className="input-pos w-full pl-9 pr-4 py-2.5 rounded-xl text-sm" />
             </div>
-            <button
-              onClick={() => setFiltroAlerta(!filtroAlerta)}
-              className="px-4 py-2.5 rounded-xl text-sm font-semibold transition-all"
-              style={filtroAlerta ? {
-                background: 'rgba(251,191,36,0.2)',
-                border: '1px solid rgba(251,191,36,0.3)',
-                color: '#fbbf24',
-              } : {
-                background: 'rgba(139,92,246,0.08)',
-                border: '1px solid rgba(139,92,246,0.15)',
-                color: 'rgba(196,181,253,0.6)',
-              }}>
+            <button onClick={() => setFiltroAlerta(!filtroAlerta)}
+                    className="px-4 py-2.5 rounded-xl text-sm font-semibold transition-all"
+                    style={filtroAlerta ? {
+                      background: 'rgba(251,191,36,0.2)',
+                      border: '1px solid rgba(251,191,36,0.3)',
+                      color: '#fbbf24',
+                    } : {
+                      background: 'rgba(139,92,246,0.08)',
+                      border: '1px solid rgba(139,92,246,0.15)',
+                      color: 'rgba(196,181,253,0.6)',
+                    }}>
               {filtroAlerta ? '⚡ Solo alertas' : 'Todos'}
             </button>
+          </div>
+        )}
+
+        {/* Filtros movimientos */}
+        {tab === 'movimientos' && (
+          <div className="flex gap-3 p-4"
+               style={{ borderBottom: '1px solid rgba(139,92,246,0.08)' }}>
+            <div className="relative flex-1">
+              <div className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: '#8b5cf6' }}>
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <circle cx="11" cy="11" r="8"/>
+                  <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                </svg>
+              </div>
+              <input type="text" value={busquedaMov}
+                     onChange={e => setBusquedaMov(e.target.value)}
+                     placeholder="Buscar por producto..."
+                     className="input-pos w-full pl-9 pr-4 py-2.5 rounded-xl text-sm" />
+            </div>
           </div>
         )}
 
@@ -242,10 +276,46 @@ export default function Inventario() {
             />
           )}
           {tab === 'movimientos' && (
-            <TablaMovimientos
-              movimientos={movimientos}
-              loading={loading}
-            />
+            <>
+              <TablaMovimientos
+                movimientos={movimientos.slice((paginaMov-1)*MOV_POR_PAGINA, paginaMov*MOV_POR_PAGINA)}
+                loading={loading}
+              />
+              {movimientos.length > MOV_POR_PAGINA && (
+                <div className="flex items-center justify-between px-2 pt-4">
+                  <p className="text-xs" style={{ color: 'rgba(196,181,253,0.4)' }}>
+                    {movimientos.length} movimientos · Página {paginaMov} de {Math.ceil(movimientos.length/MOV_POR_PAGINA)}
+                  </p>
+                  <div className="flex gap-2">
+                    <button onClick={() => setPaginaMov(p => Math.max(1, p-1))}
+                            disabled={paginaMov === 1}
+                            className="px-3 py-1.5 rounded-lg text-xs font-bold disabled:opacity-30"
+                            style={{ background: 'rgba(139,92,246,0.1)', color: '#a78bfa' }}>
+                      ← Anterior
+                    </button>
+                    {Array.from({ length: Math.min(5, Math.ceil(movimientos.length/MOV_POR_PAGINA)) }, (_, i) => {
+                      const p = paginaMov <= 3 ? i+1 : paginaMov-2+i
+                      if (p < 1 || p > Math.ceil(movimientos.length/MOV_POR_PAGINA)) return null
+                      return (
+                        <button key={p} onClick={() => setPaginaMov(p)}
+                                className="w-8 h-8 rounded-lg text-xs font-bold"
+                                style={p === paginaMov
+                                  ? { background: '#7c3aed', color: 'white' }
+                                  : { background: 'rgba(139,92,246,0.1)', color: '#a78bfa' }}>
+                          {p}
+                        </button>
+                      )
+                    })}
+                    <button onClick={() => setPaginaMov(p => Math.min(Math.ceil(movimientos.length/MOV_POR_PAGINA), p+1))}
+                            disabled={paginaMov === Math.ceil(movimientos.length/MOV_POR_PAGINA)}
+                            className="px-3 py-1.5 rounded-lg text-xs font-bold disabled:opacity-30"
+                            style={{ background: 'rgba(139,92,246,0.1)', color: '#a78bfa' }}>
+                      Siguiente →
+                    </button>
+                  </div>
+                </div>
+              )}
+            </>
           )}
         </div>
       </div>

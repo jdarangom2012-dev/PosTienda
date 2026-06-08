@@ -1,5 +1,6 @@
 import { useAuth } from '../../context/AuthContext'
 import { useLocation } from 'react-router-dom'
+import { useState, useEffect } from 'react'
 
 const PAGE_TITLES = {
   '/dashboard':  { title: 'Dashboard',      subtitle: 'Resumen general del negocio' },
@@ -8,6 +9,94 @@ const PAGE_TITLES = {
   '/inventario': { title: 'Inventario',     subtitle: 'Control de stock' },
   '/reportes':   { title: 'Reportes & IA',  subtitle: 'Análisis e inteligencia artificial' },
   '/usuarios':   { title: 'Usuarios',       subtitle: 'Gestión del equipo' },
+}
+
+// ── Hook de conexión ─────────────────────────────────────────
+function useOnlineStatus() {
+  const [online, setOnline] = useState(navigator.onLine)
+
+  useEffect(() => {
+    const handleOnline  = () => setOnline(true)
+    const handleOffline = () => setOnline(false)
+    window.addEventListener('online',  handleOnline)
+    window.addEventListener('offline', handleOffline)
+    return () => {
+      window.removeEventListener('online',  handleOnline)
+      window.removeEventListener('offline', handleOffline)
+    }
+  }, [])
+
+  return online
+}
+
+// ── Indicador de conexión ────────────────────────────────────
+function ConexionIndicador() {
+  const online = useOnlineStatus()
+  const [mostrarMensaje, setMostrarMensaje] = useState(false)
+  const [mensajeTexto,   setMensajeTexto]   = useState('')
+  const [eraOnline,      setEraOnline]      = useState(true)
+
+  // Detectar cambios de conexión
+  useEffect(() => {
+    if (eraOnline === online) return
+
+    if (!online) {
+      setMensajeTexto('Sin conexión — Modo offline activo')
+      setMostrarMensaje(true)
+      setEraOnline(false)
+      // NO ocultar el banner mientras esté offline
+    } else {
+      setMensajeTexto('🔄 Conexión restaurada — Sincronizando ventas...')
+      setMostrarMensaje(true)
+      setEraOnline(true)
+      // No ocultar aquí — el evento ventas:sincronizadas lo actualizará
+    }
+  }, [online])
+
+  // Listener de ventas sincronizadas — useEffect separado al mismo nivel
+  useEffect(() => {
+    const handleSincronizado = (e) => {
+      setMensajeTexto(`✅ ${e.detail.cantidad} venta(s) sincronizada(s) correctamente`)
+      setMostrarMensaje(true)
+      setTimeout(() => setMostrarMensaje(false), 4000)
+    }
+    window.addEventListener('ventas:sincronizadas', handleSincronizado)
+    return () => window.removeEventListener('ventas:sincronizadas', handleSincronizado)
+  }, [])
+
+  return (
+    <div className="flex items-center gap-2">
+      {mostrarMensaje && (
+        <div className="fixed top-16 left-0 right-0 z-50 flex justify-center py-2 px-4"
+             style={{
+               background: online ? 'rgba(21,128,61,0.95)' : 'rgba(220,38,38,0.95)',
+               backdropFilter: 'blur(8px)',
+               borderBottom: `1px solid ${online ? 'rgba(74,222,128,0.3)' : 'rgba(248,113,113,0.3)'}`,
+             }}>
+          <span className="text-sm font-bold text-white">
+            {online ? '✅' : '⚠️'} {mensajeTexto}
+          </span>
+        </div>
+      )}
+
+      <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg"
+           style={{
+             background: online ? 'rgba(21,128,61,0.12)' : 'rgba(220,38,38,0.12)',
+             border: `1px solid ${online ? 'rgba(74,222,128,0.25)' : 'rgba(248,113,113,0.25)'}`,
+           }}>
+        <span className="relative flex h-2 w-2">
+          <span className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75"
+                style={{ background: online ? '#4ade80' : '#f87171' }} />
+          <span className="relative inline-flex rounded-full h-2 w-2"
+                style={{ background: online ? '#4ade80' : '#f87171' }} />
+        </span>
+        <span className="text-xs font-bold hidden sm:block"
+              style={{ color: online ? '#4ade80' : '#f87171' }}>
+          {online ? 'Online' : 'Offline'}
+        </span>
+      </div>
+    </div>
+  )
 }
 
 export default function Header({ sidebarCollapsed }) {
@@ -39,6 +128,11 @@ export default function Header({ sidebarCollapsed }) {
       </div>
 
       <div className="flex items-center gap-4">
+
+        {/* Indicador de conexión */}
+        <ConexionIndicador />
+
+        {/* Fecha */}
         <div className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-lg"
              style={{ background: 'rgba(139,92,246,0.08)', border: '1px solid rgba(139,92,246,0.15)' }}>
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
@@ -53,6 +147,7 @@ export default function Header({ sidebarCollapsed }) {
           </span>
         </div>
 
+        {/* Usuario */}
         <div className="flex items-center gap-2">
           <div className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold text-white"
                style={{ background: 'linear-gradient(135deg, #7c3aed, #e879f9)' }}>

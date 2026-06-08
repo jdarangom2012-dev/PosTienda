@@ -13,13 +13,30 @@ export default function ModalPago({ total, carrito, onExito, onCerrar }) {
   const [clienteTelefono,  setClienteTelefono]   = useState('')
 
   useEffect(() => {
-    ventasService.formasPago().then(({ data }) => {
-      setFormasPago(data)
-      if (data.length > 0) {
-        setFormaPagoId(data[0].id)
-        setFormaPago(data[0])
+    const cargarFormasPago = async () => {
+      try {
+        const { data } = await ventasService.formasPago()
+        setFormasPago(data)
+        if (data.length > 0) {
+          setFormaPagoId(data[0].id)
+          setFormaPago(data[0])
+        }
+        // Cachear para offline
+        localStorage.setItem('pos_formas_pago', JSON.stringify(data))
+      } catch {
+        // Offline — cargar desde caché
+        const cached = localStorage.getItem('pos_formas_pago')
+        if (cached) {
+          const data = JSON.parse(cached)
+          setFormasPago(data)
+          if (data.length > 0) {
+            setFormaPagoId(data[0].id)
+            setFormaPago(data[0])
+          }
+        }
       }
-    })
+    }
+    cargarFormasPago()
     setMontoPagado(total.toString())
   }, [total])
 
@@ -46,15 +63,63 @@ export default function ModalPago({ total, carrito, onExito, onCerrar }) {
     setFormaPago(null)
   }
 
+  // ── Guardar venta offline ────────────────────────────────
+  const guardarVentaOffline = () => {
+    const ventaOffline = {
+      id:          `offline_${Date.now()}`,
+      fecha:       new Date().toISOString(),
+      total,
+      carrito:     [...carrito],
+      formaPagoId,
+      formaPagoNombre: formaPago?.nombre || 'Efectivo',
+      esCredito,
+      clienteNombre,
+      clienteTelefono,
+      sincronizada: false,
+    }
+    const pendientes = JSON.parse(localStorage.getItem('pos_ventas_offline') || '[]')
+    pendientes.push(ventaOffline)
+    localStorage.setItem('pos_ventas_offline', JSON.stringify(pendientes))
+    console.log('[Offline] Venta guardada localmente:', ventaOffline.id)
+    return ventaOffline
+  }
+
   const procesar = async () => {
     if (!valido) return
     setProcesando(true)
     setError('')
 
+    // ── Modo offline ────────────────────────────────────────
+    if (!navigator.onLine) {
+      const ventaOffline = guardarVentaOffline()
+      // Simular respuesta exitosa para el ticket
+      onExito({
+        venta: {
+          id:         ventaOffline.id,
+          fecha_hora: ventaOffline.fecha,
+          total:      total.toString(),
+          subtotal:   total.toString(),
+          descuento:  '0',
+          estado:     'PENDIENTE_SYNC',
+          cajero:     'offline',
+          detalle:    carrito.map(item => ({
+            producto_nombre: item.nombre,
+            cantidad:        item.cantidad.toString(),
+            precio_unit:     item.precio_unit.toString(),
+            subtotal:        (item.precio_unit * item.cantidad).toString(),
+          })),
+          pagos: [{
+            forma_pago_nombre: formaPago?.nombre || 'Efectivo',
+            monto:             total.toString(),
+          }],
+        }
+      }, cambio)
+      setProcesando(false)
+      return
+    }
+
     try {
       if (esCredito) {
-        // ── Procesar como crédito ──────────────────────
-        // 1. Primero crear la venta con forma de pago especial
         const payload = {
           detalle: carrito.map(item => ({
             producto_id: item.producto_id,
@@ -62,13 +127,11 @@ export default function ModalPago({ total, carrito, onExito, onCerrar }) {
             descuento:   item.descuento || 0,
           })),
           pagos: [{
-            forma_pago_id: formasPago[0]?.id, // temporal
+            forma_pago_id: formasPago[0]?.id,
             monto:         total,
           }],
         }
         const { data: ventaData } = await ventasService.procesar(payload)
-
-        // 2. Crear el crédito asociado a la venta
         await creditosService.crear({
           cliente_nombre:   clienteNombre.trim(),
           cliente_telefono: clienteTelefono.trim(),
@@ -76,11 +139,8 @@ export default function ModalPago({ total, carrito, onExito, onCerrar }) {
           venta_id:         ventaData.venta.id,
           notas:            `Venta #${ventaData.venta.id}`,
         })
-
         onExito(ventaData, 0)
-
       } else {
-        // ── Procesar pago normal ───────────────────────
         const payload = {
           detalle: carrito.map(item => ({
             producto_id: item.producto_id,
@@ -93,8 +153,6 @@ export default function ModalPago({ total, carrito, onExito, onCerrar }) {
           }],
         }
         const { data } = await ventasService.procesar(payload)
-
-        // Abrir cajón si es efectivo
         if (esEfectivo) {
           try {
             await fetch('http://localhost:8765/abrir-cajon', {
@@ -105,10 +163,8 @@ export default function ModalPago({ total, carrito, onExito, onCerrar }) {
             console.warn('CajonPOS no disponible')
           }
         }
-
         onExito(data, cambio)
       }
-
     } catch (err) {
       const msg = err.response?.data?.error
         || err.response?.data?.detalle
