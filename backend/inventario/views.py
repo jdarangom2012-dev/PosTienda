@@ -62,6 +62,7 @@ class InventarioViewSet(TiendaMixin, viewsets.ReadOnlyModelViewSet):
 
 
 class MovimientoViewSet(TiendaMixin, viewsets.ModelViewSet):
+    pagination_class   = InventarioPagination 
     queryset = MovimientoInventario.objects.select_related(
         'producto', 'usuario'
     ).all().order_by('-created_at')
@@ -85,6 +86,7 @@ class MovimientoViewSet(TiendaMixin, viewsets.ModelViewSet):
         if fecha_hasta:
             qs = qs.filter(created_at__date__lte=fecha_hasta)
         return qs
+    
 
     @transaction.atomic
     def perform_create(self, serializer):
