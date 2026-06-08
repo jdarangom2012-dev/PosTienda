@@ -17,6 +17,7 @@ export default function Inventario() {
   const [filtroAlerta, setFiltroAlerta] = useState(false)
   const [modalItem,    setModalItem]    = useState(null)
   const [busquedaMov,  setBusquedaMov]  = useState('')
+  const [diasMov, setDiasMov] = useState(3)
   const [paginaMov,    setPaginaMov]    = useState(1)
   const MOV_POR_PAGINA = 10
 
@@ -41,7 +42,13 @@ export default function Inventario() {
   const cargarMovimientos = useCallback(async () => {
     setLoading(true)
     try {
-      const { data } = await inventarioService.movimientos({ page_size: 500 })
+      const params = { page_size: 500 }
+      if (diasMov !== 0) {
+        const desde = new Date()
+        desde.setDate(desde.getDate() - diasMov)
+        params.fecha_desde = desde.toISOString().slice(0, 10)
+      }
+      const { data } = await inventarioService.movimientos(params)
       setTodosMovimientos(data.results || data)
       setPaginaMov(1)
     } catch (err) {
@@ -49,7 +56,8 @@ export default function Inventario() {
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [diasMov])
+
 
   // Filtrar movimientos localmente por búsqueda
   useEffect(() => {
@@ -263,6 +271,18 @@ export default function Inventario() {
                      placeholder="Buscar por producto..."
                      className="input-pos w-full pl-9 pr-4 py-2.5 rounded-xl text-sm" />
             </div>
+            <select
+              value={diasMov}
+              onChange={e => setDiasMov(Number(e.target.value))}
+              className="input-pos px-4 py-2.5 rounded-xl text-sm"
+              style={{ background: '#1e1b4b', color: '#e2e8f0' }}>
+              <option value={1}>Hoy</option>
+              <option value={3}>Últimos 3 días</option>
+              <option value={7}>Última semana</option>
+              <option value={15}>Últimos 15 días</option>
+              <option value={30}>Último mes</option>
+              <option value={0}>Todos</option>
+            </select>
           </div>
         )}
 
