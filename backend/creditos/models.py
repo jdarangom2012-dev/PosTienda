@@ -54,21 +54,20 @@ class Credito(models.Model):
 
 class AbonoCredito(models.Model):
 
+    FORMA_PAGO_CHOICES = [
+        ('EFECTIVO', 'Efectivo'),
+        ('NEQUI',    'Nequi'),
+        ('OTRO',     'Otro'),
+    ]
+
     credito    = models.ForeignKey(Credito, on_delete=models.CASCADE,
                                    related_name='abonos')
     monto      = models.DecimalField(max_digits=12, decimal_places=2,
                                      verbose_name='Monto del abono')
+    forma_pago = models.CharField(max_length=20, choices=FORMA_PAGO_CHOICES,
+                                  default='EFECTIVO', verbose_name='Forma de pago')
     nota       = models.TextField(blank=True, null=True, verbose_name='Nota')
     usuario    = models.ForeignKey(Usuario, on_delete=models.PROTECT,
                                    related_name='abonos_registrados',
                                    verbose_name='Usuario que recibió el abono')
     created_at = models.DateTimeField(auto_now_add=True)
-
-    class Meta:
-        verbose_name        = 'Abono de Crédito'
-        verbose_name_plural = 'Abonos de Crédito'
-        db_table            = 'abonos_credito'
-        ordering            = ['-created_at']
-
-    def __str__(self):
-        return f"Abono ${self.monto} → {self.credito.cliente_nombre}"

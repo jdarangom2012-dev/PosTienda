@@ -100,6 +100,7 @@ class CreditoViewSet(TiendaMixin, viewsets.ModelViewSet):
         AbonoCredito.objects.create(
             credito = credito,
             monto   = monto,
+            forma_pago = serializer.validated_data.get('forma_pago', 'EFECTIVO'),
             nota    = nota,
             usuario = usuario,
         )

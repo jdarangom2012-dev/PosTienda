@@ -1194,17 +1194,16 @@ function TabCartera() {
                         </span>
                       </td>
                       <td className="px-4 py-3">
-                        {c.abonos?.length > 0 ? (
-                          <div className="space-y-0.5">
-                            {c.abonos.map((a, j) => (
+                       {c.abonos.map((a, j) => (
                               <div key={j} className="text-xs" style={{ color: 'rgba(196,181,253,0.5)' }}>
-                                {new Date(a.created_at).toLocaleDateString('es-CO')} — <span style={{ color: '#4ade80' }}>{fmt(a.monto)}</span>
+                                {new Date(a.created_at).toLocaleDateString('es-CO')} — 
+                                <span style={{ color: '#4ade80' }}> {fmt(a.monto)}</span>
+                                <span className="ml-1 px-1.5 py-0.5 rounded text-xs font-bold"
+                                      style={{ background: 'rgba(139,92,246,0.15)', color: '#a78bfa' }}>
+                                  {a.forma_pago || 'EFECTIVO'}
+                                </span>
                               </div>
                             ))}
-                          </div>
-                        ) : (
-                          <span className="text-xs" style={{ color: 'rgba(196,181,253,0.3)' }}>Sin abonos</span>
-                        )}
                       </td>
                     </tr>
                   )

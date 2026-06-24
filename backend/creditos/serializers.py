@@ -8,9 +8,8 @@ class AbonoCreditoSerializer(serializers.ModelSerializer):
 
     class Meta:
         model  = AbonoCredito
-        fields = ('id', 'monto', 'nota', 'usuario_nombre', 'created_at')
+        fields = ('id', 'monto', 'forma_pago', 'nota', 'usuario_nombre', 'created_at')
         read_only_fields = ('id', 'usuario_nombre', 'created_at')
-
 
 class CreditoSerializer(serializers.ModelSerializer):
     abonos          = AbonoCreditoSerializer(many=True, read_only=True)
@@ -63,8 +62,9 @@ class CrearCreditoSerializer(serializers.Serializer):
 
 
 class AbonarCreditoSerializer(serializers.Serializer):
-    monto = serializers.DecimalField(max_digits=12, decimal_places=2)
-    nota  = serializers.CharField(required=False, allow_blank=True)
+    monto      = serializers.DecimalField(max_digits=12, decimal_places=2)
+    forma_pago = serializers.ChoiceField(choices=['EFECTIVO', 'NEQUI', 'OTRO'], default='EFECTIVO')
+    nota       = serializers.CharField(required=False, allow_blank=True)
 
     def validate_monto(self, value):
         if value <= 0:

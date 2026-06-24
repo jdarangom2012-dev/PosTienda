@@ -4,6 +4,7 @@ import { creditosService } from '../../../services/api'
 export default function ModalAbono({ credito, onGuardado, onCerrar }) {
   const [monto,     setMonto]     = useState('')
   const [nota,      setNota]      = useState('')
+  const [formaPago, setFormaPago] = useState('EFECTIVO')
   const [guardando, setGuardando] = useState(false)
   const [error,     setError]     = useState('')
 
@@ -16,7 +17,7 @@ export default function ModalAbono({ credito, onGuardado, onCerrar }) {
     setGuardando(true)
     setError('')
     try {
-      await creditosService.abonar(credito.id, { monto: montoNum, nota })
+      await creditosService.abonar(credito.id, { monto: montoNum, nota, forma_pago: formaPago })
       onGuardado()
     } catch (err) {
       setError(err.response?.data?.error || 'Error al registrar el abono.')
@@ -75,6 +76,34 @@ export default function ModalAbono({ credito, onGuardado, onCerrar }) {
             />
           </div>
 
+          {/* Forma de pago */}
+          <div>
+            <p className="text-xs font-semibold mb-2 tracking-widest uppercase"
+               style={{ color: 'rgba(196,181,253,0.6)' }}>
+              Forma de pago *
+            </p>
+            <div className="grid grid-cols-3 gap-2">
+              {[
+                { value: 'EFECTIVO', label: '💵 Efectivo' },
+                { value: 'NEQUI',    label: '📱 Nequi' },
+                { value: 'OTRO',     label: '💳 Otro' },
+              ].map(fp => (
+                <button key={fp.value} onClick={() => setFormaPago(fp.value)}
+                        className="py-2.5 rounded-xl text-xs font-bold transition-all"
+                        style={formaPago === fp.value ? {
+                          background: 'linear-gradient(135deg, #7c3aed, #a855f7)',
+                          color: 'white',
+                        } : {
+                          background: 'rgba(139,92,246,0.08)',
+                          border: '1px solid rgba(139,92,246,0.2)',
+                          color: 'rgba(196,181,253,0.7)',
+                        }}>
+                  {fp.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
           {/* Nota */}
           <div>
             <p className="text-xs font-semibold mb-2 tracking-widest uppercase"
@@ -84,7 +113,7 @@ export default function ModalAbono({ credito, onGuardado, onCerrar }) {
             <textarea
               value={nota}
               onChange={e => setNota(e.target.value)}
-              placeholder="Ej: Pago parcial en efectivo..."
+              placeholder="Ej: Pago parcial..."
               rows={2}
               className="input-pos w-full px-4 py-3 rounded-xl text-sm resize-none"
             />
