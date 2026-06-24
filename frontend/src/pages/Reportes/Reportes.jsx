@@ -1,7 +1,6 @@
-import { useState, useEffect } from 'react'
-import { iaService, ventasService, inventarioService, productosService } from '../../services/api'
+import { useState, useEffect, useCallback } from 'react'
+import { iaService, ventasService, inventarioService, productosService, creditosService } from '../../services/api'
 import GraficaVentas from './components/GraficaVentas'
-
 
 // ── Iconos ──────────────────────────────────────────────────
 const IconIA    = () => <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M12 2a10 10 0 1 0 10 10"/><path d="M12 6v6l4 2"/><circle cx="18" cy="6" r="3" fill="currentColor" opacity=".3"/></svg>
@@ -588,7 +587,95 @@ function TabMovimientos() {
     </div>
   )
 }
+// ── Ventas del período ───────────────────────────────────────
+function VentasPeriodo({ fechaDesde, fechaHasta, fmt }) {
+  const [ventas,   setVentas]   = useState([])
+  const [loading,  setLoading]  = useState(false)
+  const [pagina,   setPagina]   = useState(1)
+  const POR_PAGINA = 10
 
+  useEffect(() => {
+    if (!fechaDesde || !fechaHasta) return
+    setLoading(true)
+    ventasService.listar({ fecha_desde: fechaDesde, fecha_hasta: fechaHasta, page_size: 500, estado: 'COMPLETADA' })
+      .then(({ data }) => {
+        setVentas(data.results || data)
+        setPagina(1)
+      })
+      .catch(console.error)
+      .finally(() => setLoading(false))
+  }, [fechaDesde, fechaHasta])
+
+  if (loading) return (
+    <div className="flex justify-center py-4">
+      <div className="w-6 h-6 rounded-full border-2 border-purple-500 border-t-transparent animate-spin" />
+    </div>
+  )
+
+  if (!ventas.length) return (
+    <p className="text-xs text-center py-4" style={{ color: 'rgba(196,181,253,0.3)' }}>Sin ventas en este período</p>
+  )
+
+  const totalPaginas = Math.ceil(ventas.length / POR_PAGINA)
+  const ventasPagina = ventas.slice((pagina-1)*POR_PAGINA, pagina*POR_PAGINA)
+
+  return (
+    <div className="space-y-2">
+      <div className="overflow-x-auto rounded-xl" style={{ border: '1px solid rgba(139,92,246,0.12)' }}>
+        <table className="w-full">
+          <thead>
+            <tr style={{ borderBottom: '1px solid rgba(139,92,246,0.15)' }}>
+              {['#', 'Hora', 'Productos', 'Total', 'Forma pago'].map(h => (
+                <th key={h} className="px-3 py-2 text-left text-xs font-bold uppercase tracking-wider"
+                    style={{ color: 'rgba(196,181,253,0.4)' }}>{h}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {ventasPagina.map((v, i) => (
+              <tr key={v.id} style={{
+                borderBottom: '1px solid rgba(139,92,246,0.07)',
+                background: i % 2 === 0 ? 'transparent' : 'rgba(139,92,246,0.02)',
+              }}>
+                <td className="px-3 py-2 text-xs font-bold" style={{ color: '#a78bfa' }}>
+                  #{v.id}
+                </td>
+                <td className="px-3 py-2 text-xs" style={{ color: 'rgba(196,181,253,0.5)' }}>
+                  {new Date(v.fecha_hora).toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' })}
+                </td>
+                <td className="px-3 py-2 text-xs text-white">
+                  {v.detalle?.map(d => `${d.producto_nombre} x${parseFloat(d.cantidad)}`).join(', ') || '—'}
+                </td>
+                <td className="px-3 py-2 text-xs font-bold" style={{ color: '#4ade80' }}>
+                  {fmt(v.total)}
+                </td>
+                <td className="px-3 py-2 text-xs" style={{ color: 'rgba(196,181,253,0.5)' }}>
+                  {v.pagos?.map(p => p.forma_pago_nombre).join(', ') || '—'}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {totalPaginas > 1 && (
+        <div className="flex items-center justify-between px-1 pt-2">
+          <p className="text-xs" style={{ color: 'rgba(196,181,253,0.4)' }}>
+            {ventas.length} ventas · Página {pagina} de {totalPaginas}
+          </p>
+          <div className="flex gap-2">
+            <button onClick={() => setPagina(p => Math.max(1, p-1))} disabled={pagina===1}
+                    className="px-3 py-1 rounded-lg text-xs font-bold disabled:opacity-30"
+                    style={{ background: 'rgba(139,92,246,0.1)', color: '#a78bfa' }}>← Ant</button>
+            <button onClick={() => setPagina(p => Math.min(totalPaginas, p+1))} disabled={pagina===totalPaginas}
+                    className="px-3 py-1 rounded-lg text-xs font-bold disabled:opacity-30"
+                    style={{ background: 'rgba(139,92,246,0.1)', color: '#a78bfa' }}>Sig →</button>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
 // ── Tab Consultas ────────────────────────────────────────────
 function TabConsultas() {
   const fmt = (v) => `$${parseFloat(v || 0).toLocaleString('es-CO')}`
@@ -600,7 +687,7 @@ function TabConsultas() {
   const [resumen,      setResumen]      = useState(null)
   const [loadingV,     setLoadingV]     = useState(false)
 
-  const buscarVentas = async () => {
+  const buscarVentas = useCallback(async () => {
     if (!fechaDesde || !fechaHasta) return
     setLoadingV(true)
     try {
@@ -608,7 +695,11 @@ function TabConsultas() {
       setResumen(data)
     } catch (err) { console.error(err) }
     finally { setLoadingV(false) }
-  }
+  }, [fechaDesde, fechaHasta])
+
+  useEffect(() => {
+    buscarVentas()
+  }, [buscarVentas])
 
   const exportarVentas = () => {
     if (!resumen?.top_productos?.length) return
@@ -724,10 +815,10 @@ function TabConsultas() {
             {/* Cards */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
               {[
-                { label: 'Total ventas',      value: resumen.total_ventas,                color: '#8b5cf6' },
-                { label: 'Total ingresos',    value: fmt(resumen.total_ingresos),          color: '#4ade80' },
-                { label: 'Ticket promedio',   value: fmt(resumen.ticket_promedio),         color: '#06b6d4' },
-                { label: 'Canceladas',        value: resumen.ventas_canceladas,            color: '#f87171' },
+                { label: 'Total ventas',    value: resumen.total_ventas,       color: '#8b5cf6' },
+                { label: 'Total ingresos',  value: fmt(resumen.total_ingresos), color: '#4ade80' },
+                { label: 'Ticket promedio', value: fmt(resumen.ticket_promedio),color: '#06b6d4' },
+                { label: 'Canceladas',      value: resumen.ventas_canceladas,   color: '#f87171' },
               ].map(c => (
                 <div key={c.label} className="rounded-xl p-3"
                      style={{ background: 'rgba(139,92,246,0.06)', border: '1px solid rgba(139,92,246,0.12)' }}>
@@ -737,69 +828,34 @@ function TabConsultas() {
               ))}
             </div>
 
-            {/* Top productos + Formas de pago */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <p className="text-xs font-bold uppercase tracking-wider mb-3"
-                   style={{ color: 'rgba(196,181,253,0.4)' }}>🏆 Top productos</p>
-                <div className="space-y-2">
-                  {topProductosPagina.map((p, i) => (
-                    <div key={i} className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs font-bold w-5 text-center"
-                              style={{ color: i === 0 && paginaProd === 1 ? '#f59e0b' : 'rgba(196,181,253,0.3)' }}>
-                          {(paginaProd - 1) * PROD_POR_PAGINA + i + 1}
-                        </span>
-                        <span className="text-sm text-white">{p.producto__nombre}</span>
+            {/* Formas de pago */}
+            <div>
+              <p className="text-xs font-bold uppercase tracking-wider mb-3"
+                 style={{ color: 'rgba(196,181,253,0.4)' }}>💳 Formas de pago</p>
+              <div className="space-y-2">
+                {resumen.por_forma_pago?.map((p, i) => {
+                  const pct = Math.round((p.total / (resumen.total_ingresos || 1)) * 100)
+                  return (
+                    <div key={i}>
+                      <div className="flex justify-between text-xs mb-1">
+                        <span className="text-white">{p.forma_pago_nombre}</span>
+                        <span style={{ color: '#a78bfa' }}>{fmt(p.total)} ({pct}%)</span>
                       </div>
-                      <div className="text-right">
-                        <p className="text-xs font-bold" style={{ color: '#a78bfa' }}>{parseFloat(p.total_vendido)} uds</p>
-                        <p className="text-xs" style={{ color: 'rgba(196,181,253,0.4)' }}>{fmt(p.total_ingresos)}</p>
+                      <div className="h-1.5 rounded-full overflow-hidden" style={{ background: 'rgba(139,92,246,0.1)' }}>
+                        <div className="h-full rounded-full"
+                             style={{ width: `${pct}%`, background: 'linear-gradient(90deg, #7c3aed, #a855f7)' }} />
                       </div>
                     </div>
-                  ))}
-                  {totalPaginasProd > 1 && (
-                    <div className="flex items-center justify-between pt-2"
-                         style={{ borderTop: '1px solid rgba(139,92,246,0.1)' }}>
-                      <button onClick={() => setPaginaProd(p => Math.max(1, p - 1))}
-                              disabled={paginaProd === 1}
-                              className="text-xs px-2 py-1 rounded-lg disabled:opacity-30"
-                              style={{ background: 'rgba(139,92,246,0.1)', color: '#a78bfa' }}>← Ant</button>
-                      <span className="text-xs" style={{ color: 'rgba(196,181,253,0.4)' }}>
-                        {paginaProd} / {totalPaginasProd}
-                      </span>
-                      <button onClick={() => setPaginaProd(p => Math.min(totalPaginasProd, p + 1))}
-                              disabled={paginaProd === totalPaginasProd}
-                              className="text-xs px-2 py-1 rounded-lg disabled:opacity-30"
-                              style={{ background: 'rgba(139,92,246,0.1)', color: '#a78bfa' }}>Sig →</button>
-                    </div>
-                  )}
-                  {!resumen.top_productos?.length && (
-                    <p className="text-xs" style={{ color: 'rgba(196,181,253,0.3)' }}>Sin datos</p>
-                  )}
-                </div>
+                  )
+                })}
               </div>
-              <div>
-                <p className="text-xs font-bold uppercase tracking-wider mb-3"
-                   style={{ color: 'rgba(196,181,253,0.4)' }}>💳 Formas de pago</p>
-                <div className="space-y-2">
-                  {resumen.por_forma_pago?.map((p, i) => {
-                    const pct = Math.round((p.total / (resumen.total_ingresos || 1)) * 100)
-                    return (
-                      <div key={i}>
-                        <div className="flex justify-between text-xs mb-1">
-                          <span className="text-white">{p.forma_pago_nombre}</span>
-                          <span style={{ color: '#a78bfa' }}>{fmt(p.total)} ({pct}%)</span>
-                        </div>
-                        <div className="h-1.5 rounded-full overflow-hidden" style={{ background: 'rgba(139,92,246,0.1)' }}>
-                          <div className="h-full rounded-full"
-                               style={{ width: `${pct}%`, background: 'linear-gradient(90deg, #7c3aed, #a855f7)' }} />
-                        </div>
-                      </div>
-                    )
-                  })}
-                </div>
-              </div>
+            </div>
+
+            {/* Listado de ventas */}
+            <div>
+              <p className="text-xs font-bold uppercase tracking-wider mb-3"
+                 style={{ color: 'rgba(196,181,253,0.4)' }}>🧾 Ventas del período</p>
+              <VentasPeriodo fechaDesde={fechaDesde} fechaHasta={fechaHasta} fmt={fmt} />
             </div>
           </div>
         )}
@@ -943,7 +999,227 @@ function TabConsultas() {
     </div>
   )
 }
+// ── Tab Cartera ──────────────────────────────────────────────
+function TabCartera() {
+  const fmt = (v) => `$${parseFloat(v || 0).toLocaleString('es-CO')}`
+  const hoy = new Date().toISOString().slice(0, 10)
 
+  const [fechaDesde,   setFechaDesde]   = useState(hoy)
+  const [fechaHasta,   setFechaHasta]   = useState(hoy)
+  const [resumen,      setResumen]      = useState(null)
+  const [creditos,     setCreditos]     = useState([])
+  const [busqueda,     setBusqueda]     = useState('')
+  const [filtroEstado, setFiltroEstado] = useState('')
+  const [loading,      setLoading]      = useState(false)
+  const [pagina,       setPagina]       = useState(1)
+  const POR_PAGINA = 15
+
+  const buscar = useCallback(async () => {
+    setLoading(true)
+    try {
+      const params = { fecha_desde: fechaDesde, fecha_hasta: fechaHasta, page_size: 500 }
+      if (busqueda)     params.search = busqueda
+      if (filtroEstado) params.estado = filtroEstado
+
+      const [r, c] = await Promise.all([
+        creditosService.resumenPeriodo({ fecha_desde: fechaDesde, fecha_hasta: fechaHasta }),
+        creditosService.listar(params),
+      ])
+      setResumen(r.data)
+      setCreditos(c.data.results || c.data)
+      setPagina(1)
+    } catch (err) { console.error(err) }
+    finally { setLoading(false) }
+  }, [fechaDesde, fechaHasta, busqueda, filtroEstado])
+
+  useEffect(() => { buscar() }, [buscar])
+
+  const exportarExcel = () => {
+    if (!creditos.length) return
+    const headers = ['Fecha', 'Cliente', 'Teléfono', 'Total crédito', 'Abonado', 'Saldo', 'Estado']
+    const rows = creditos.map(c => [
+      new Date(c.created_at).toLocaleDateString('es-CO'),
+      c.cliente_nombre,
+      c.cliente_telefono || '—',
+      parseFloat(c.total_deuda),
+      parseFloat(c.total_abonado),
+      parseFloat(c.saldo_pendiente),
+      c.estado,
+    ])
+    const csv = [headers, ...rows]
+      .map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(','))
+      .join('\n')
+    const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' })
+    const a = document.createElement('a')
+    a.href = URL.createObjectURL(blob)
+    a.download = `cartera_${fechaDesde}_${fechaHasta}.csv`
+    a.click()
+  }
+
+  const totalPaginas  = Math.ceil(creditos.length / POR_PAGINA)
+  const creditosPagina = creditos.slice((pagina-1)*POR_PAGINA, pagina*POR_PAGINA)
+
+  return (
+    <div className="space-y-4">
+
+      {/* Filtros */}
+      <div className="glass rounded-2xl p-4 space-y-3">
+        <div className="flex flex-wrap gap-3 items-end">
+          <div>
+            <p className="text-xs mb-1" style={{ color: 'rgba(196,181,253,0.4)' }}>Desde</p>
+            <input type="date" value={fechaDesde}
+                   onChange={e => setFechaDesde(e.target.value)}
+                   className="input-pos px-3 py-2.5 rounded-xl text-sm" />
+          </div>
+          <div>
+            <p className="text-xs mb-1" style={{ color: 'rgba(196,181,253,0.4)' }}>Hasta</p>
+            <input type="date" value={fechaHasta}
+                   onChange={e => setFechaHasta(e.target.value)}
+                   className="input-pos px-3 py-2.5 rounded-xl text-sm" />
+          </div>
+          <input type="text" value={busqueda}
+                 onChange={e => setBusqueda(e.target.value)}
+                 placeholder="Buscar cliente..."
+                 className="input-pos px-3 py-2.5 rounded-xl text-sm w-48" />
+          <select value={filtroEstado} onChange={e => setFiltroEstado(e.target.value)}
+                  className="input-pos px-3 py-2.5 rounded-xl text-sm"
+                  style={{ background: '#1e1b4b', color: '#e2e8f0' }}>
+            <option value="">Todos los estados</option>
+            <option value="PENDIENTE">Pendiente</option>
+            <option value="PAGADO">Pagado</option>
+            <option value="VENCIDO">Vencido</option>
+          </select>
+          {creditos.length > 0 && (
+            <button onClick={exportarExcel}
+                    className="px-4 py-2.5 rounded-xl text-sm font-bold"
+                    style={{ background: 'rgba(74,222,128,0.1)', color: '#4ade80', border: '1px solid rgba(74,222,128,0.2)' }}>
+              📥 Exportar Excel
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* Cards resumen */}
+      {resumen && (
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+          {[
+            { label: 'Créditos',         value: resumen.total_creditos,                color: '#8b5cf6' },
+            { label: 'Clientes',         value: resumen.total_clientes,                color: '#06b6d4' },
+            { label: 'Total otorgado',   value: fmt(resumen.total_otorgado),           color: '#f59e0b' },
+            { label: 'Abonado período',  value: fmt(resumen.total_abonado_periodo),    color: '#4ade80' },
+            { label: 'Saldo pendiente',  value: fmt(resumen.saldo_pendiente),          color: '#f87171' },
+          ].map(c => (
+            <div key={c.label} className="rounded-xl p-3"
+                 style={{ background: 'rgba(139,92,246,0.06)', border: '1px solid rgba(139,92,246,0.12)' }}>
+              <p className="text-xs mb-1" style={{ color: 'rgba(196,181,253,0.4)' }}>{c.label}</p>
+              <p className="text-base font-black" style={{ color: c.color, fontFamily: 'Syne, sans-serif' }}>{c.value}</p>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Tabla créditos */}
+      {loading ? (
+        <div className="flex justify-center py-8">
+          <div className="w-8 h-8 rounded-full border-2 border-purple-500 border-t-transparent animate-spin" />
+        </div>
+      ) : creditos.length > 0 ? (
+        <div className="glass rounded-2xl overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr style={{ borderBottom: '1px solid rgba(139,92,246,0.15)' }}>
+                  {['Fecha', 'Cliente', 'Teléfono', 'Total crédito', 'Abonado', 'Saldo', 'Estado', 'Abonos'].map(h => (
+                    <th key={h} className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider"
+                        style={{ color: 'rgba(196,181,253,0.4)' }}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {creditosPagina.map((c, i) => {
+                  const estColor = c.estado === 'PAGADO'
+                    ? { bg: 'rgba(74,222,128,0.1)',  color: '#4ade80' }
+                    : c.estado === 'VENCIDO'
+                    ? { bg: 'rgba(239,68,68,0.1)',   color: '#f87171' }
+                    : { bg: 'rgba(245,158,11,0.1)',  color: '#f59e0b' }
+                  return (
+                    <tr key={c.id} style={{
+                      borderBottom: '1px solid rgba(139,92,246,0.07)',
+                      background: i % 2 === 0 ? 'transparent' : 'rgba(139,92,246,0.02)',
+                    }}>
+                      <td className="px-4 py-3 text-xs" style={{ color: 'rgba(196,181,253,0.5)' }}>
+                        {new Date(c.created_at).toLocaleDateString('es-CO')}
+                      </td>
+                      <td className="px-4 py-3 text-sm font-semibold text-white">{c.cliente_nombre}</td>
+                      <td className="px-4 py-3 text-xs" style={{ color: 'rgba(196,181,253,0.4)' }}>
+                        {c.cliente_telefono || '—'}
+                      </td>
+                      <td className="px-4 py-3 text-sm font-bold text-white">{fmt(c.total_deuda)}</td>
+                      <td className="px-4 py-3 text-sm" style={{ color: '#4ade80' }}>{fmt(c.total_abonado)}</td>
+                      <td className="px-4 py-3 text-sm font-bold" style={{ color: '#f59e0b' }}>{fmt(c.saldo_pendiente)}</td>
+                      <td className="px-4 py-3">
+                        <span className="text-xs px-2 py-1 rounded-lg font-medium"
+                              style={{ background: estColor.bg, color: estColor.color }}>
+                          {c.estado}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3">
+                        {c.abonos?.length > 0 ? (
+                          <div className="space-y-0.5">
+                            {c.abonos.map((a, j) => (
+                              <div key={j} className="text-xs" style={{ color: 'rgba(196,181,253,0.5)' }}>
+                                {new Date(a.created_at).toLocaleDateString('es-CO')} — <span style={{ color: '#4ade80' }}>{fmt(a.monto)}</span>
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <span className="text-xs" style={{ color: 'rgba(196,181,253,0.3)' }}>Sin abonos</span>
+                        )}
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
+
+          {totalPaginas > 1 && (
+            <div className="flex items-center justify-between px-4 py-3"
+                 style={{ borderTop: '1px solid rgba(139,92,246,0.1)' }}>
+              <p className="text-xs" style={{ color: 'rgba(196,181,253,0.4)' }}>
+                {creditos.length} créditos · Página {pagina} de {totalPaginas}
+              </p>
+              <div className="flex gap-2">
+                <button onClick={() => setPagina(p => Math.max(1, p-1))} disabled={pagina===1}
+                        className="px-3 py-1.5 rounded-lg text-xs font-bold disabled:opacity-30"
+                        style={{ background: 'rgba(139,92,246,0.1)', color: '#a78bfa' }}>← Anterior</button>
+                {Array.from({ length: Math.min(5, totalPaginas) }, (_, i) => {
+                  const p = pagina <= 3 ? i+1 : pagina-2+i
+                  if (p < 1 || p > totalPaginas) return null
+                  return (
+                    <button key={p} onClick={() => setPagina(p)}
+                            className="w-8 h-8 rounded-lg text-xs font-bold"
+                            style={p === pagina ? { background: '#7c3aed', color: 'white' } : { background: 'rgba(139,92,246,0.1)', color: '#a78bfa' }}>
+                      {p}
+                    </button>
+                  )
+                })}
+                <button onClick={() => setPagina(p => Math.min(totalPaginas, p+1))} disabled={pagina===totalPaginas}
+                        className="px-3 py-1.5 rounded-lg text-xs font-bold disabled:opacity-30"
+                        style={{ background: 'rgba(139,92,246,0.1)', color: '#a78bfa' }}>Siguiente →</button>
+              </div>
+            </div>
+          )}
+        </div>
+      ) : (
+        <div className="glass rounded-2xl flex flex-col items-center justify-center py-16 gap-3">
+          <p className="text-3xl">💳</p>
+          <p className="text-sm text-white">No hay créditos en este período</p>
+        </div>
+      )}
+    </div>
+  )
+}
 // ── Tab IA ───────────────────────────────────────────────────
 function TabIA() {
   const [estadoIA, setEstadoIA] = useState(null)
@@ -998,6 +1274,8 @@ export default function Reportes() {
             { id: 'movimientos',  label: '📦 Movimientos' },
             { id: 'ia',           label: '🤖 Asistente IA' },
             { id: 'consultas',    label: '🔎 Consultas' },
+            { id: 'cartera',      label: '💰 Cartera' },
+
           ].map(t => (
             <button key={t.id} onClick={() => setTab(t.id)}
                     className="flex-1 py-4 text-sm font-semibold transition-all"
@@ -1018,6 +1296,7 @@ export default function Reportes() {
           {tab === 'movimientos' && <TabMovimientos />}
           {tab === 'ia'          && <TabIA />}
           {tab === 'consultas'   && <TabConsultas />}
+          {tab === 'cartera'     && <TabCartera />}
         </div>
       </div>
 

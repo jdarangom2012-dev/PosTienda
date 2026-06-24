@@ -202,9 +202,10 @@ if (typeof window !== 'undefined') {
 }
 // Servicios de créditos
 export const creditosService = {
-  listar:   (params) => api.get('/creditos/',              { params }),
-  detalle:  (id)     => api.get(`/creditos/${id}/`),
-  crear:    (data)   => api.post('/creditos/',              data),
-  abonar:   (id, data) => api.post(`/creditos/${id}/abonar/`, data),
-  resumen:  ()       => api.get('/creditos/resumen/'),
+  listar:          (params)    => api.get('/creditos/',                    { params }),
+  detalle:         (id)        => api.get(`/creditos/${id}/`),
+  crear:           (data)      => api.post('/creditos/',                   data),
+  abonar:          (id, data)  => api.post(`/creditos/${id}/abonar/`,     data),
+  resumen:         ()          => api.get('/creditos/resumen/'),
+  resumenPeriodo:  (params)    => api.get('/creditos/resumen-periodo/',    { params }),
 }

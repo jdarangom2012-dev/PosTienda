@@ -126,3 +126,37 @@ class CreditoViewSet(TiendaMixin, viewsets.ModelViewSet):
             'total_clientes': total_clientes,
             'tope_maximo':    float(getattr(settings, 'CREDITO_TOPE_MAXIMO', 50000)),
         })
+    @action(detail=False, methods=['get'], url_path='resumen-periodo')
+    def resumen_periodo(self, request):
+        fecha_desde = request.query_params.get('fecha_desde')
+        fecha_hasta = request.query_params.get('fecha_hasta')
+        tienda      = self.get_tienda()
+
+        qs = Credito.objects.filter(tienda=tienda)
+        if fecha_desde:
+            qs = qs.filter(created_at__date__gte=fecha_desde)
+        if fecha_hasta:
+            qs = qs.filter(created_at__date__lte=fecha_hasta)
+
+        total_creditos  = qs.count()
+        total_otorgado  = float(qs.aggregate(t=Sum('total_deuda'))['t'] or 0)
+        total_abonado   = float(qs.aggregate(t=Sum('total_abonado'))['t'] or 0)
+        saldo_pendiente = total_otorgado - total_abonado
+        clientes        = qs.values('cliente_nombre').distinct().count()
+
+        # Abonos del período
+        from .models import AbonoCredito
+        abonos_qs = AbonoCredito.objects.filter(credito__tienda=tienda)
+        if fecha_desde:
+            abonos_qs = abonos_qs.filter(created_at__date__gte=fecha_desde)
+        if fecha_hasta:
+            abonos_qs = abonos_qs.filter(created_at__date__lte=fecha_hasta)
+        total_abonos_periodo = float(abonos_qs.aggregate(t=Sum('monto'))['t'] or 0)
+
+        return Response({
+            'total_creditos':        total_creditos,
+            'total_otorgado':        total_otorgado,
+            'total_abonado_periodo': total_abonos_periodo,
+            'saldo_pendiente':       saldo_pendiente,
+            'total_clientes':        clientes,
+        })
