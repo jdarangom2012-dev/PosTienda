@@ -15,6 +15,7 @@ export default function Dashboard() {
   const [ventasHoy, setVentasHoy] = useState([])
   const [loading,  setLoading]  = useState(true)
   const [cartera, setCartera] = useState(null)
+  const [abonosHoy, setAbonosHoy] = useState(null)
   const [cuentasAbiertas, setCuentasAbiertas] = useState(() => {
     try { return JSON.parse(localStorage.getItem('pos_cuentas') || '[]') }
     catch { return [] }
@@ -24,18 +25,20 @@ export default function Dashboard() {
     const cargar = async () => {
       setLoading(true)
       try {
-        const [r, s, a, v, c] = await Promise.all([
+        const [r, s, a, v, c, ab] = await Promise.all([
           ventasService.resumenHoy(),
           ventasService.resumenSemana(),
           inventarioService.alertas(),
           ventasService.hoy(),
           creditosService.resumen(),
+          creditosService.abonosHoy(),
         ])
         setResumen(r.data)
         setSemana(s.data.por_dia || [])
         setAlertas(a.data.productos || [])
         setVentasHoy(v.data || [])
         setCartera(c.data)
+        setAbonosHoy(ab.data)
       } catch (err) {
         console.error('Error cargando dashboard:', err)
       } finally {
@@ -63,7 +66,7 @@ export default function Dashboard() {
       </div>
 
       {/* Stat cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-6 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
         <StatCard
           title="Ventas hoy"
           value={resumen?.total_ventas ?? '—'}
@@ -134,6 +137,19 @@ export default function Dashboard() {
                 stroke="currentColor" strokeWidth="2">
               <rect x="1" y="4" width="22" height="16" rx="2" ry="2"/>
               <line x1="1" y1="10" x2="23" y2="10"/>
+            </svg>
+          }
+        />
+        <StatCard
+          title="Abonos hoy"
+          value={formatCOP(abonosHoy?.total_abonos)}
+          subtitle={`${abonosHoy?.cantidad || 0} abonos recibidos`}
+          color="#a78bfa"
+          loading={loading}
+          icon={
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none"
+                 stroke="currentColor" strokeWidth="2">
+              <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
             </svg>
           }
         />

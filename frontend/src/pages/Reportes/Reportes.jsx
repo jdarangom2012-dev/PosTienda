@@ -676,6 +676,35 @@ function VentasPeriodo({ fechaDesde, fechaHasta, fmt }) {
     </div>
   )
 }
+
+function AbonosPeriodo({ fechaDesde, fechaHasta, fmt }) {
+  const [abonos, setAbonos] = useState(null)
+
+  useEffect(() => {
+    if (!fechaDesde || !fechaHasta) return
+    creditosService.resumenPeriodo({ fecha_desde: fechaDesde, fecha_hasta: fechaHasta })
+      .then(({ data }) => setAbonos(data))
+      .catch(console.error)
+  }, [fechaDesde, fechaHasta])
+
+  if (!abonos) return null
+
+  return (
+    <div className="rounded-xl p-3 flex items-center justify-between"
+         style={{ background: 'rgba(167,139,250,0.08)', border: '1px solid rgba(167,139,250,0.2)' }}>
+      <div>
+        <p className="text-xs font-bold uppercase tracking-wider"
+           style={{ color: 'rgba(196,181,253,0.5)' }}>💰 Abonos a créditos recibidos</p>
+        <p className="text-xs mt-0.5" style={{ color: 'rgba(196,181,253,0.4)' }}>
+          Dinero cobrado por créditos pendientes
+        </p>
+      </div>
+      <p className="text-xl font-black" style={{ color: '#a78bfa', fontFamily: 'Syne, sans-serif' }}>
+        {fmt(abonos.total_abonado_periodo)}
+      </p>
+    </div>
+  )
+}
 // ── Tab Consultas ────────────────────────────────────────────
 function TabConsultas() {
   const fmt = (v) => `$${parseFloat(v || 0).toLocaleString('es-CO')}`
@@ -827,6 +856,7 @@ function TabConsultas() {
                 </div>
               ))}
             </div>
+            <AbonosPeriodo fechaDesde={fechaDesde} fechaHasta={fechaHasta} fmt={fmt} />
 
             {/* Formas de pago */}
             <div>

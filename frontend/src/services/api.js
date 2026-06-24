@@ -208,4 +208,6 @@ export const creditosService = {
   abonar:          (id, data)  => api.post(`/creditos/${id}/abonar/`,     data),
   resumen:         ()          => api.get('/creditos/resumen/'),
   resumenPeriodo:  (params)    => api.get('/creditos/resumen-periodo/',    { params }),
+  abonosHoy:       ()          => api.get('/creditos/abonos-hoy/'),
+  abonosPeriodo:   (params)    => api.get('/creditos/resumen-periodo/',    { params }),
 }

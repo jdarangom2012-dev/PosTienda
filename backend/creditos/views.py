@@ -160,3 +160,24 @@ class CreditoViewSet(TiendaMixin, viewsets.ModelViewSet):
             'saldo_pendiente':       saldo_pendiente,
             'total_clientes':        clientes,
         })
+        
+    @action(detail=False, methods=['get'], url_path='abonos-hoy')
+    def abonos_hoy(self, request):
+        from .models import AbonoCredito
+        from django.utils import timezone
+        
+        hoy    = timezone.now().astimezone(timezone.get_current_timezone()).date()
+        tienda = self.get_tienda()
+        
+        abonos = AbonoCredito.objects.filter(
+            credito__tienda = tienda,
+            created_at__date = hoy,
+        )
+        
+        total = float(abonos.aggregate(t=Sum('monto'))['t'] or 0)
+        
+        return Response({
+            'fecha':        str(hoy),
+            'total_abonos': total,
+            'cantidad':     abonos.count(),
+        })
