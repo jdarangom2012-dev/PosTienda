@@ -201,3 +201,50 @@ class VentaPago(models.Model):
 
     def __str__(self):
         return f"{self.forma_pago.nombre} — ${self.monto}"
+
+class CierreCaja(models.Model):
+    ESTADO_CHOICES = [
+        ('ABIERTA', 'Abierta'),
+        ('CERRADA', 'Cerrada'),
+    ]
+
+    tienda                  = models.ForeignKey('usuarios.Tienda', on_delete=models.CASCADE,
+                                                related_name='cierres_caja')
+    usuario                 = models.ForeignKey('usuarios.Usuario', on_delete=models.PROTECT,
+                                                related_name='cierres_caja')
+    fecha                   = models.DateField(verbose_name='Fecha')
+    hora_apertura           = models.DateTimeField(auto_now_add=True)
+    hora_cierre             = models.DateTimeField(null=True, blank=True)
+    monto_apertura          = models.DecimalField(max_digits=12, decimal_places=2,
+                                                  verbose_name='Base inicial efectivo')
+    total_ventas_efectivo   = models.DecimalField(max_digits=12, decimal_places=2,
+                                                  default=0, verbose_name='Ventas en efectivo')
+    total_ventas_nequi      = models.DecimalField(max_digits=12, decimal_places=2,
+                                                  default=0, verbose_name='Ventas en Nequi')
+    total_abonos_efectivo   = models.DecimalField(max_digits=12, decimal_places=2,
+                                                  default=0, verbose_name='Abonos en efectivo')
+    total_abonos_nequi      = models.DecimalField(max_digits=12, decimal_places=2,
+                                                  default=0, verbose_name='Abonos en Nequi')
+    monto_esperado          = models.DecimalField(max_digits=12, decimal_places=2,
+                                                  default=0, verbose_name='Total esperado en caja')
+    monto_real              = models.DecimalField(max_digits=12, decimal_places=2,
+                                                  null=True, blank=True, verbose_name='Conteo real')
+    diferencia              = models.DecimalField(max_digits=12, decimal_places=2,
+                                                  null=True, blank=True, verbose_name='Diferencia')
+    notas                   = models.TextField(blank=True, null=True)
+    estado                  = models.CharField(max_length=10, choices=ESTADO_CHOICES,
+                                               default='ABIERTA')
+    created_at              = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name        = 'Cierre de Caja'
+        verbose_name_plural = 'Cierres de Caja'
+        db_table            = 'cierres_caja'
+        ordering            = ['-fecha', '-hora_apertura']
+
+    def __str__(self):
+        return f"Caja {self.fecha} — {self.usuario.username} ({self.estado})"
+
+    @property
+    def total_efectivo_esperado(self):
+        return self.monto_apertura + self.total_ventas_efectivo + self.total_abonos_efectivo

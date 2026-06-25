@@ -2,7 +2,7 @@
 // 8. src/pages/Dashboard/Dashboard.jsx
 // ============================================================
 import { useEffect, useState } from 'react'
-import { ventasService, inventarioService, creditosService } from '../../services/api'
+import { ventasService, inventarioService, creditosService, cajaService } from '../../services/api'
 import StatCard      from './components/StatCard'
 import VentasChart   from './components/VentasChart'
 import AlertasStock  from './components/AlertasStock'
@@ -20,18 +20,24 @@ export default function Dashboard() {
     try { return JSON.parse(localStorage.getItem('pos_cuentas') || '[]') }
     catch { return [] }
   })
-
+  const [caja,         setCaja]         = useState(null)
+  const [modalCaja,    setModalCaja]    = useState(false)
+  const [montoCaja,    setMontoCaja]    = useState('')
+  const [montoReal,    setMontoReal]    = useState('')
+  const [notasCaja,    setNotasCaja]    = useState('')
+  const [loadingCaja,  setLoadingCaja]  = useState(false)
   useEffect(() => {
     const cargar = async () => {
       setLoading(true)
       try {
-        const [r, s, a, v, c, ab] = await Promise.all([
+        const [r, s, a, v, c, ab, cj] = await Promise.all([
           ventasService.resumenHoy(),
           ventasService.resumenSemana(),
           inventarioService.alertas(),
           ventasService.hoy(),
           creditosService.resumen(),
           creditosService.abonosHoy(),
+          cajaService.estado(),
         ])
         setResumen(r.data)
         setSemana(s.data.por_dia || [])
@@ -39,6 +45,7 @@ export default function Dashboard() {
         setVentasHoy(v.data || [])
         setCartera(c.data)
         setAbonosHoy(ab.data)
+        setCaja(cj.data)
       } catch (err) {
         console.error('Error cargando dashboard:', err)
       } finally {
@@ -50,20 +57,198 @@ export default function Dashboard() {
 
   const formatCOP = (n) =>
     `$${parseFloat(n || 0).toLocaleString('es-CO')}`
+  
+  const abrirCaja = async () => {
+    if (!montoCaja) return
+    setLoadingCaja(true)
+    try {
+      const { data } = await cajaService.abrir({ monto_apertura: parseFloat(montoCaja) })
+      setCaja(data)
+      setModalCaja(false)
+      setMontoCaja('')
+    } catch (err) {
+      alert(err.response?.data?.error || 'Error al abrir caja')
+    } finally {
+      setLoadingCaja(false)
+    }
+  }
+  const cerrarCaja = async () => {
+    if (!montoReal) return
+    setLoadingCaja(true)
+    try {
+      const { data } = await cajaService.cerrar({ monto_real: parseFloat(montoReal), notas: notasCaja })
+      setCaja(data)
+      setModalCaja(false)
+      setMontoReal('')
+      setNotasCaja('')
+    } catch (err) {
+      alert(err.response?.data?.error || 'Error al cerrar caja')
+    } finally {
+      setLoadingCaja(false)
+    }
+  }
 
   return (
     <div className="space-y-6 animate-fade-in">
 
-      {/* Bienvenida */}
-      <div>
-        <h2 className="text-2xl font-black text-white"
-            style={{ fontFamily: 'Syne, sans-serif' }}>
-          Resumen del día 📊
-        </h2>
-        <p className="text-sm mt-1" style={{ color: 'rgba(196,181,253,0.5)' }}>
-          Todo lo que necesitas saber de un vistazo
-        </p>
+     {/* Bienvenida */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-2xl font-black text-white"
+              style={{ fontFamily: 'Syne, sans-serif' }}>
+            Resumen del día 📊
+          </h2>
+          <p className="text-sm mt-1" style={{ color: 'rgba(196,181,253,0.5)' }}>
+            Todo lo que necesitas saber de un vistazo
+          </p>
+        </div>
+        <button onClick={async () => {
+          if (caja?.estado === 'ABIERTA') {
+            // Recargar estado actualizado antes de mostrar modal
+            try {
+              const { data } = await cajaService.estado()
+              setCaja(data)
+            } catch {}
+          }
+          setModalCaja(true)
+        }}
+                className="px-5 py-2.5 rounded-xl text-sm font-bold text-white flex items-center gap-2"
+                style={caja?.estado === 'ABIERTA'
+                  ? { background: 'linear-gradient(135deg, #f87171, #dc2626)' }
+                  : { background: 'linear-gradient(135deg, #4ade80, #16a34a)' }}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/>
+          </svg>
+          {caja?.estado === 'ABIERTA' ? '🔴 Cerrar Caja' : '🟢 Abrir Caja'}
+        </button>
       </div>
+      {/* Modal Caja */}
+      {modalCaja && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4"
+             style={{ background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(8px)' }}>
+          <div className="glass rounded-3xl p-6 w-full max-w-md animate-fade-in"
+               style={{ boxShadow: '0 32px 80px rgba(124,58,237,0.3)' }}>
+
+            {/* Header */}
+            <div className="flex items-center justify-between mb-5">
+              <h2 className="text-xl font-black text-white" style={{ fontFamily: 'Syne, sans-serif' }}>
+                {caja?.estado === 'ABIERTA' ? '🔴 Cerrar Caja' : '🟢 Abrir Caja'}
+              </h2>
+              <button onClick={() => setModalCaja(false)}
+                      className="w-8 h-8 rounded-xl flex items-center justify-center"
+                      style={{ background: 'rgba(239,68,68,0.1)', color: '#f87171' }}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                  <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                </svg>
+              </button>
+            </div>
+
+            {caja?.estado === 'ABIERTA' ? (
+              /* Cerrar caja */
+              <div className="space-y-4">
+                {/* Resumen */}
+                <div className="rounded-xl p-4 space-y-2"
+                     style={{ background: 'rgba(139,92,246,0.06)', border: '1px solid rgba(139,92,246,0.12)' }}>
+                  {[
+                    { label: '💵 Base apertura',       value: formatCOP(caja.monto_apertura) },
+                    { label: '🛒 Ventas efectivo',      value: formatCOP(caja.total_ventas_efectivo) },
+                    { label: '📱 Ventas Nequi',         value: formatCOP(caja.total_ventas_nequi) },
+                    { label: '💰 Abonos efectivo',      value: formatCOP(caja.total_abonos_efectivo) },
+                    { label: '📱 Abonos Nequi',         value: formatCOP(caja.total_abonos_nequi) },
+                  ].map(r => (
+                    <div key={r.label} className="flex justify-between text-sm">
+                      <span style={{ color: 'rgba(196,181,253,0.6)' }}>{r.label}</span>
+                      <span className="font-bold text-white">{r.value}</span>
+                    </div>
+                  ))}
+                  <div className="flex justify-between text-sm pt-2"
+                       style={{ borderTop: '1px solid rgba(139,92,246,0.15)' }}>
+                    <span className="font-bold" style={{ color: '#4ade80' }}>💵 Efectivo esperado</span>
+                    <span className="font-black text-lg" style={{ color: '#4ade80' }}>
+                      {formatCOP((caja.monto_apertura || 0) + (caja.total_ventas_efectivo || 0) + (caja.total_abonos_efectivo || 0))}
+                    </span>
+                  </div>
+                </div>
+
+                <div>
+                  <p className="text-xs font-semibold mb-2 uppercase tracking-widest"
+                     style={{ color: 'rgba(196,181,253,0.6)' }}>Conteo real de efectivo *</p>
+                  <input type="number" value={montoReal}
+                         onChange={e => setMontoReal(e.target.value)}
+                         placeholder="0"
+                         className="input-pos w-full px-4 py-3.5 rounded-xl text-lg font-bold text-center" />
+                </div>
+
+                {montoReal && (
+                  <div className="flex justify-between px-4 py-3 rounded-xl"
+                       style={{
+                         background: parseFloat(montoReal) >= ((caja.monto_apertura || 0) + (caja.total_ventas_efectivo || 0) + (caja.total_abonos_efectivo || 0))
+                           ? 'rgba(74,222,128,0.08)' : 'rgba(239,68,68,0.08)',
+                         border: '1px solid rgba(139,92,246,0.15)'
+                       }}>
+                    <span className="text-sm" style={{ color: 'rgba(196,181,253,0.6)' }}>Diferencia</span>
+                    <span className="font-black" style={{
+                      color: parseFloat(montoReal) >= ((caja.monto_apertura || 0) + (caja.total_ventas_efectivo || 0) + (caja.total_abonos_efectivo || 0))
+                        ? '#4ade80' : '#f87171'
+                    }}>
+                      {formatCOP(parseFloat(montoReal || 0) - ((caja.monto_apertura || 0) + (caja.total_ventas_efectivo || 0) + (caja.total_abonos_efectivo || 0)))}
+                    </span>
+                  </div>
+                )}
+
+                <div>
+                  <p className="text-xs font-semibold mb-2 uppercase tracking-widest"
+                     style={{ color: 'rgba(196,181,253,0.6)' }}>Notas (opcional)</p>
+                  <textarea value={notasCaja} onChange={e => setNotasCaja(e.target.value)}
+                            placeholder="Observaciones del cierre..."
+                            rows={2}
+                            className="input-pos w-full px-4 py-3 rounded-xl text-sm resize-none" />
+                </div>
+
+                <div className="flex gap-3">
+                  <button onClick={() => setModalCaja(false)}
+                          className="flex-1 py-3 rounded-xl text-sm font-semibold"
+                          style={{ background: 'rgba(139,92,246,0.08)', border: '1px solid rgba(139,92,246,0.2)', color: 'rgba(196,181,253,0.7)' }}>
+                    Cancelar
+                  </button>
+                  <button onClick={cerrarCaja} disabled={!montoReal || loadingCaja}
+                          className="flex-1 py-3 rounded-xl text-sm font-bold text-white disabled:opacity-50"
+                          style={{ background: 'linear-gradient(135deg, #f87171, #dc2626)' }}>
+                    {loadingCaja ? 'Cerrando...' : 'Cerrar Caja'}
+                  </button>
+                </div>
+              </div>
+            ) : (
+              /* Abrir caja */
+              <div className="space-y-4">
+                <p className="text-sm" style={{ color: 'rgba(196,181,253,0.6)' }}>
+                  Ingresa el monto inicial en efectivo con que abre la caja hoy.
+                </p>
+                <div>
+                  <p className="text-xs font-semibold mb-2 uppercase tracking-widest"
+                     style={{ color: 'rgba(196,181,253,0.6)' }}>Base inicial en efectivo *</p>
+                  <input type="number" value={montoCaja}
+                         onChange={e => setMontoCaja(e.target.value)}
+                         placeholder="0"
+                         className="input-pos w-full px-4 py-3.5 rounded-xl text-lg font-bold text-center" />
+                </div>
+                <div className="flex gap-3">
+                  <button onClick={() => setModalCaja(false)}
+                          className="flex-1 py-3 rounded-xl text-sm font-semibold"
+                          style={{ background: 'rgba(139,92,246,0.08)', border: '1px solid rgba(139,92,246,0.2)', color: 'rgba(196,181,253,0.7)' }}>
+                    Cancelar
+                  </button>
+                  <button onClick={abrirCaja} disabled={!montoCaja || loadingCaja}
+                          className="flex-1 py-3 rounded-xl text-sm font-bold text-white disabled:opacity-50"
+                          style={{ background: 'linear-gradient(135deg, #4ade80, #16a34a)' }}>
+                    {loadingCaja ? 'Abriendo...' : 'Abrir Caja'}
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Stat cards */}
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">

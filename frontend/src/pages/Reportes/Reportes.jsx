@@ -597,7 +597,7 @@ function VentasPeriodo({ fechaDesde, fechaHasta, fmt }) {
   useEffect(() => {
     if (!fechaDesde || !fechaHasta) return
     setLoading(true)
-    ventasService.listar({ fecha_desde: fechaDesde, fecha_hasta: fechaHasta, page_size: 500, estado: 'COMPLETADA' })
+    ventasService.listar({ fecha_desde: fechaDesde, fecha_hasta: fechaHasta, page_size: 2000, estado: 'COMPLETADA' })
       .then(({ data }) => {
         setVentas(data.results || data)
         setPagina(1)
@@ -605,6 +605,27 @@ function VentasPeriodo({ fechaDesde, fechaHasta, fmt }) {
       .catch(console.error)
       .finally(() => setLoading(false))
   }, [fechaDesde, fechaHasta])
+
+  const exportarExcel = () => {
+    if (!ventas.length) return
+    const headers = ['#', 'Fecha', 'Hora', 'Productos', 'Total', 'Forma pago']
+    const rows = ventas.map(v => [
+      v.id,
+      new Date(v.fecha_hora).toLocaleDateString('es-CO'),
+      new Date(v.fecha_hora).toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' }),
+      v.detalle?.map(d => `${d.producto_nombre} x${parseFloat(d.cantidad)}`).join(' | ') || '—',
+      parseFloat(v.total),
+      v.pagos?.map(p => p.forma_pago_nombre).join(', ') || '—',
+    ])
+    const csv = [headers, ...rows]
+      .map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(','))
+      .join('\n')
+    const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' })
+    const a = document.createElement('a')
+    a.href = URL.createObjectURL(blob)
+    a.download = `ventas_${fechaDesde}_${fechaHasta}.csv`
+    a.click()
+  }
 
   if (loading) return (
     <div className="flex justify-center py-4">
@@ -621,6 +642,18 @@ function VentasPeriodo({ fechaDesde, fechaHasta, fmt }) {
 
   return (
     <div className="space-y-2">
+      {/* Header con exportar */}
+      <div className="flex items-center justify-between">
+        <p className="text-xs" style={{ color: 'rgba(196,181,253,0.4)' }}>
+          {ventas.length} ventas en el período
+        </p>
+        <button onClick={exportarExcel}
+                className="px-3 py-1.5 rounded-lg text-xs font-bold"
+                style={{ background: 'rgba(74,222,128,0.1)', color: '#4ade80', border: '1px solid rgba(74,222,128,0.2)' }}>
+          📥 Exportar Excel
+        </button>
+      </div>
+
       <div className="overflow-x-auto rounded-xl" style={{ border: '1px solid rgba(139,92,246,0.12)' }}>
         <table className="w-full">
           <thead>
@@ -637,18 +670,14 @@ function VentasPeriodo({ fechaDesde, fechaHasta, fmt }) {
                 borderBottom: '1px solid rgba(139,92,246,0.07)',
                 background: i % 2 === 0 ? 'transparent' : 'rgba(139,92,246,0.02)',
               }}>
-                <td className="px-3 py-2 text-xs font-bold" style={{ color: '#a78bfa' }}>
-                  #{v.id}
-                </td>
+                <td className="px-3 py-2 text-xs font-bold" style={{ color: '#a78bfa' }}>#{v.id}</td>
                 <td className="px-3 py-2 text-xs" style={{ color: 'rgba(196,181,253,0.5)' }}>
                   {new Date(v.fecha_hora).toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' })}
                 </td>
                 <td className="px-3 py-2 text-xs text-white">
                   {v.detalle?.map(d => `${d.producto_nombre} x${parseFloat(d.cantidad)}`).join(', ') || '—'}
                 </td>
-                <td className="px-3 py-2 text-xs font-bold" style={{ color: '#4ade80' }}>
-                  {fmt(v.total)}
-                </td>
+                <td className="px-3 py-2 text-xs font-bold" style={{ color: '#4ade80' }}>{fmt(v.total)}</td>
                 <td className="px-3 py-2 text-xs" style={{ color: 'rgba(196,181,253,0.5)' }}>
                   {v.pagos?.map(p => p.forma_pago_nombre).join(', ') || '—'}
                 </td>
@@ -661,7 +690,7 @@ function VentasPeriodo({ fechaDesde, fechaHasta, fmt }) {
       {totalPaginas > 1 && (
         <div className="flex items-center justify-between px-1 pt-2">
           <p className="text-xs" style={{ color: 'rgba(196,181,253,0.4)' }}>
-            {ventas.length} ventas · Página {pagina} de {totalPaginas}
+            Página {pagina} de {totalPaginas}
           </p>
           <div className="flex gap-2">
             <button onClick={() => setPagina(p => Math.max(1, p-1))} disabled={pagina===1}
@@ -829,13 +858,7 @@ function TabConsultas() {
                   className="btn-primary px-5 py-2.5 rounded-xl text-sm font-bold text-white disabled:opacity-50">
             {loadingV ? 'Consultando...' : '🔍 Consultar'}
           </button>
-          {resumen && (
-            <button onClick={exportarVentas}
-                    className="px-5 py-2.5 rounded-xl text-sm font-bold"
-                    style={{ background: 'rgba(74,222,128,0.1)', color: '#4ade80', border: '1px solid rgba(74,222,128,0.2)' }}>
-              📥 Exportar Excel
-            </button>
-          )}
+         
         </div>
 
         {/* Resultados */}

@@ -211,3 +211,10 @@ export const creditosService = {
   abonosHoy:       ()          => api.get('/creditos/abonos-hoy/'),
   abonosPeriodo:   (params)    => api.get('/creditos/resumen-periodo/',    { params }),
 }
+
+export const cajaService = {
+  estado:    ()       => api.get('/ventas/caja/'),
+  abrir:     (data)   => api.post('/ventas/caja/', data),
+  cerrar:    (data)   => api.put('/ventas/caja/', data),
+  historial: (params) => api.get('/ventas/caja/historial/', { params }),
+}

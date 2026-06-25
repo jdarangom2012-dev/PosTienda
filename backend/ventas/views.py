@@ -5,6 +5,7 @@ from rest_framework              import viewsets, status, filters
 from rest_framework.decorators   import action
 from rest_framework.response     import Response
 from rest_framework.permissions  import IsAuthenticated
+from rest_framework.pagination   import PageNumberPagination
 from rest_framework.views        import APIView
 from django.db                   import transaction
 from django.db.models            import Sum, Count, Q
@@ -14,7 +15,7 @@ from decimal                     import Decimal
 
 from productos.models            import Producto
 from inventario.models           import Inventario, MovimientoInventario
-from .models                     import FormaPago, Venta, VentaDetalle, VentaPago
+from .models                     import FormaPago, Venta, VentaDetalle, VentaPago, CierreCaja
 from .serializers                import (
     FormaPagoSerializer,
     VentaReadSerializer,
@@ -24,6 +25,7 @@ from .serializers                import (
 from usuarios.mixins import TiendaMixin
 from usuarios.models import Usuario
 from auditoria.models import registrar_auditoria
+
 
 class FormaPagoViewSet(TiendaMixin, viewsets.ModelViewSet):
     queryset           = FormaPago.objects.all().order_by('nombre')
@@ -35,8 +37,15 @@ class FormaPagoViewSet(TiendaMixin, viewsets.ModelViewSet):
         qs = self.get_queryset().filter(activa=True)
         return Response(FormaPagoSerializer(qs, many=True).data)
 
+from rest_framework.pagination import PageNumberPagination
 
+class VentaPagination(PageNumberPagination):
+    page_size = 20
+    page_size_query_param = 'page_size'
+    max_page_size = 2000
+    
 class VentaViewSet(TiendaMixin, viewsets.ReadOnlyModelViewSet):
+    pagination_class   = VentaPagination   # ← agregar esta línea
     queryset = Venta.objects.select_related(
         'usuario'
     ).prefetch_related(
@@ -474,3 +483,183 @@ class CancelarVentaView(APIView):
             'mensaje': f'Venta #{venta.id} cancelada correctamente.',
             'motivo':  serializer.validated_data['motivo'],
         }, status=status.HTTP_200_OK)
+
+class CierreCajaView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        """Obtiene el cierre activo de hoy o el historial"""
+        tienda = request.tienda
+        hoy    = timezone.now().astimezone(timezone.get_current_timezone()).date()
+
+        # Verificar si hay caja abierta hoy
+        caja_activa = CierreCaja.objects.filter(
+            tienda=tienda, fecha=hoy, estado='ABIERTA'
+        ).first()
+
+        if caja_activa:
+            # Calcular totales en tiempo real
+            pagos_filter = {
+                'venta__fecha_hora__date': hoy,
+                'venta__estado': 'COMPLETADA',
+                'venta__tienda': tienda,
+            }
+            from creditos.models import AbonoCredito
+            ventas_efectivo = VentaPago.objects.filter(
+                **pagos_filter, forma_pago__nombre__icontains='efectivo'
+            ).aggregate(t=Sum('monto'))['t'] or 0
+
+            ventas_nequi = VentaPago.objects.filter(
+                **pagos_filter, forma_pago__nombre__icontains='nequi'
+            ).aggregate(t=Sum('monto'))['t'] or 0
+
+            abonos_efectivo = AbonoCredito.objects.filter(
+                credito__tienda=tienda,
+                created_at__date=hoy,
+                forma_pago='EFECTIVO',
+            ).aggregate(t=Sum('monto'))['t'] or 0
+
+            abonos_nequi = AbonoCredito.objects.filter(
+                credito__tienda=tienda,
+                created_at__date=hoy,
+                forma_pago='NEQUI',
+            ).aggregate(t=Sum('monto'))['t'] or 0
+
+            caja_activa.total_ventas_efectivo = ventas_efectivo
+            caja_activa.total_ventas_nequi    = ventas_nequi
+            caja_activa.total_abonos_efectivo = abonos_efectivo
+            caja_activa.total_abonos_nequi    = abonos_nequi
+
+            return Response(self._serializar(caja_activa))
+
+    def post(self, request):
+        """Abrir caja"""
+        tienda  = request.tienda
+        hoy     = timezone.now().astimezone(timezone.get_current_timezone()).date()
+        usuario = Usuario.objects.get(pk=request.user.pk)
+
+        # Verificar si ya hay caja abierta
+        if CierreCaja.objects.filter(tienda=tienda, fecha=hoy, estado='ABIERTA').exists():
+            return Response({'error': 'Ya hay una caja abierta hoy.'}, status=400)
+
+        monto_apertura = request.data.get('monto_apertura', 0)
+
+        caja = CierreCaja.objects.create(
+            tienda         = tienda,
+            usuario        = usuario,
+            fecha          = hoy,
+            monto_apertura = monto_apertura,
+        )
+        return Response(self._serializar(caja), status=201)
+
+    def put(self, request):
+        """Cerrar caja"""
+        tienda = request.tienda
+        hoy    = timezone.now().astimezone(timezone.get_current_timezone()).date()
+
+        caja = CierreCaja.objects.filter(
+            tienda=tienda, fecha=hoy, estado='ABIERTA'
+        ).first()
+
+        if not caja:
+            return Response({'error': 'No hay caja abierta.'}, status=400)
+
+        # Calcular totales del día
+        pagos_filter = {
+            'venta__fecha_hora__date': hoy,
+            'venta__estado': 'COMPLETADA',
+            'venta__tienda': tienda,
+        }
+
+        ventas_efectivo = VentaPago.objects.filter(
+            **pagos_filter, forma_pago__nombre__icontains='efectivo'
+        ).aggregate(t=Sum('monto'))['t'] or 0
+
+        ventas_nequi = VentaPago.objects.filter(
+            **pagos_filter, forma_pago__nombre__icontains='nequi'
+        ).aggregate(t=Sum('monto'))['t'] or 0
+
+        from creditos.models import AbonoCredito
+        abonos_efectivo = AbonoCredito.objects.filter(
+            credito__tienda=tienda,
+            created_at__date=hoy,
+            forma_pago='EFECTIVO',
+        ).aggregate(t=Sum('monto'))['t'] or 0
+
+        abonos_nequi = AbonoCredito.objects.filter(
+            credito__tienda=tienda,
+            created_at__date=hoy,
+            forma_pago='NEQUI',
+        ).aggregate(t=Sum('monto'))['t'] or 0
+
+        monto_real = Decimal(str(request.data.get('monto_real', 0)))
+        monto_esperado = caja.monto_apertura + Decimal(str(ventas_efectivo)) + Decimal(str(abonos_efectivo))
+
+        caja.total_ventas_efectivo = ventas_efectivo
+        caja.total_ventas_nequi    = ventas_nequi
+        caja.total_abonos_efectivo = abonos_efectivo
+        caja.total_abonos_nequi    = abonos_nequi
+        caja.monto_esperado        = monto_esperado
+        caja.monto_real            = monto_real
+        caja.diferencia            = monto_real - monto_esperado
+        caja.hora_cierre           = timezone.now()
+        caja.notas                 = request.data.get('notas', '')
+        caja.estado                = 'CERRADA'
+        caja.save()
+
+        return Response(self._serializar(caja))
+
+    def _serializar(self, caja):
+        return {
+            'id':                    caja.id,
+            'fecha':                 str(caja.fecha),
+            'estado':                caja.estado,
+            'hora_apertura':         str(caja.hora_apertura),
+            'hora_cierre':           str(caja.hora_cierre) if caja.hora_cierre else None,
+            'usuario':               caja.usuario.username,
+            'monto_apertura':        float(caja.monto_apertura),
+            'total_ventas_efectivo': float(caja.total_ventas_efectivo),
+            'total_ventas_nequi':    float(caja.total_ventas_nequi),
+            'total_abonos_efectivo': float(caja.total_abonos_efectivo),
+            'total_abonos_nequi':    float(caja.total_abonos_nequi),
+            'monto_esperado':        float(caja.monto_apertura + caja.total_ventas_efectivo + caja.total_abonos_efectivo),
+            'monto_real':            float(caja.monto_real) if caja.monto_real is not None else None,
+            'diferencia':            float(caja.diferencia) if caja.diferencia is not None else None,
+            'notas':                 caja.notas or '',
+        }
+
+
+class HistorialCajaView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        tienda      = request.tienda
+        fecha_desde = request.query_params.get('fecha_desde')
+        fecha_hasta = request.query_params.get('fecha_hasta')
+
+        qs = CierreCaja.objects.filter(tienda=tienda, estado='CERRADA')
+        if fecha_desde:
+            qs = qs.filter(fecha__gte=fecha_desde)
+        if fecha_hasta:
+            qs = qs.filter(fecha__lte=fecha_hasta)
+
+        data = []
+        for caja in qs:
+            data.append({
+                'id':                    caja.id,
+                'fecha':                 str(caja.fecha),
+                'usuario':               caja.usuario.username,
+                'monto_apertura':        float(caja.monto_apertura),
+                'total_ventas_efectivo': float(caja.total_ventas_efectivo),
+                'total_ventas_nequi':    float(caja.total_ventas_nequi),
+                'total_abonos_efectivo': float(caja.total_abonos_efectivo),
+                'total_abonos_nequi':    float(caja.total_abonos_nequi),
+                'monto_esperado':        float(caja.monto_esperado),
+                'monto_real':            float(caja.monto_real) if caja.monto_real else 0,
+                'diferencia':            float(caja.diferencia) if caja.diferencia else 0,
+                'notas':                 caja.notas or '',
+                'hora_apertura':         str(caja.hora_apertura),
+                'hora_cierre':           str(caja.hora_cierre) if caja.hora_cierre else None,
+            })
+
+        return Response(data)
