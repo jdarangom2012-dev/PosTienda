@@ -10,7 +10,7 @@ from rest_framework.views        import APIView
 from django.db                   import transaction
 from django.db.models            import Sum, Count, Q
 from django.utils                import timezone
-from datetime                    import timedelta
+from datetime                    import timedelta, datetime
 from decimal                     import Decimal
 
 from productos.models            import Producto
@@ -25,7 +25,9 @@ from .serializers                import (
 from usuarios.mixins import TiendaMixin
 from usuarios.models import Usuario
 from auditoria.models import registrar_auditoria
+import pytz
 
+bogota = pytz.timezone('America/Bogota')
 
 class FormaPagoViewSet(TiendaMixin, viewsets.ModelViewSet):
     queryset           = FormaPago.objects.all().order_by('nombre')
@@ -512,16 +514,21 @@ class CierreCajaView(APIView):
             ventas_nequi = VentaPago.objects.filter(
                 **pagos_filter, forma_pago__nombre__icontains='nequi'
             ).aggregate(t=Sum('monto'))['t'] or 0
+            
+            desde  = bogota.localize(datetime.strptime(str(hoy), '%Y-%m-%d'))
+            hasta  = bogota.localize(datetime.strptime(str(hoy), '%Y-%m-%d') + timedelta(days=1))
 
             abonos_efectivo = AbonoCredito.objects.filter(
                 credito__tienda=tienda,
-                created_at__date=hoy,
+                created_at__gte=desde,
+                created_at__lt=hasta,
                 forma_pago='EFECTIVO',
             ).aggregate(t=Sum('monto'))['t'] or 0
 
             abonos_nequi = AbonoCredito.objects.filter(
                 credito__tienda=tienda,
-                created_at__date=hoy,
+                created_at__gte=desde,
+                created_at__lt=hasta,
                 forma_pago='NEQUI',
             ).aggregate(t=Sum('monto'))['t'] or 0
 

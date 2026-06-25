@@ -7,7 +7,7 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from django.db.models        import Sum, Q
 from django.conf             import settings
-from django.utils            import timezone
+from django.utils            import timezone as tz
 from decimal                 import Decimal
 from usuarios.mixins         import TiendaMixin
 from usuarios.models         import Usuario
@@ -15,8 +15,10 @@ from .models                 import Credito, AbonoCredito
 from .serializers            import (
     CreditoSerializer, CrearCreditoSerializer, AbonarCreditoSerializer
 )
-
-
+from django.db.models.functions import TruncDate
+import pytz
+bogota = pytz.timezone('America/Bogota')
+        
 class CreditoViewSet(TiendaMixin, viewsets.ModelViewSet):
     queryset           = Credito.objects.prefetch_related('abonos').all()
     serializer_class   = CreditoSerializer
@@ -147,13 +149,23 @@ class CreditoViewSet(TiendaMixin, viewsets.ModelViewSet):
 
         # Abonos del período
         from .models import AbonoCredito
+        
         abonos_qs = AbonoCredito.objects.filter(credito__tienda=tienda)
         if fecha_desde:
-            abonos_qs = abonos_qs.filter(created_at__date__gte=fecha_desde)
+            abonos_qs = abonos_qs.filter(
+                created_at__gte=bogota.localize(
+                    __import__('datetime').datetime.strptime(fecha_desde, '%Y-%m-%d')
+                )
+            )
         if fecha_hasta:
-            abonos_qs = abonos_qs.filter(created_at__date__lte=fecha_hasta)
+            from datetime import datetime, timedelta
+            hasta_dt = bogota.localize(
+                datetime.strptime(fecha_hasta, '%Y-%m-%d') + timedelta(days=1)
+            )
+            abonos_qs = abonos_qs.filter(created_at__lt=hasta_dt)
+            
         total_abonos_periodo = float(abonos_qs.aggregate(t=Sum('monto'))['t'] or 0)
-
+    
         return Response({
             'total_creditos':        total_creditos,
             'total_otorgado':        total_otorgado,
@@ -165,18 +177,24 @@ class CreditoViewSet(TiendaMixin, viewsets.ModelViewSet):
     @action(detail=False, methods=['get'], url_path='abonos-hoy')
     def abonos_hoy(self, request):
         from .models import AbonoCredito
-        from django.utils import timezone
-        
-        hoy    = timezone.now().astimezone(timezone.get_current_timezone()).date()
+        from datetime import datetime, timedelta
+        import pytz
+
+        bogota = pytz.timezone('America/Bogota')
+        hoy    = datetime.now(bogota).date()
         tienda = self.get_tienda()
-        
+
+        desde = bogota.localize(datetime.strptime(str(hoy), '%Y-%m-%d'))
+        hasta = bogota.localize(datetime.strptime(str(hoy), '%Y-%m-%d') + timedelta(days=1))
+
         abonos = AbonoCredito.objects.filter(
             credito__tienda = tienda,
-            created_at__date = hoy,
+            created_at__gte = desde,
+            created_at__lt  = hasta,
         )
-        
+
         total = float(abonos.aggregate(t=Sum('monto'))['t'] or 0)
-        
+
         return Response({
             'fecha':        str(hoy),
             'total_abonos': total,
