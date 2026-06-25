@@ -1158,8 +1158,8 @@ function TabCartera() {
           {[
             { label: 'Créditos',         value: resumen.total_creditos,                color: '#8b5cf6' },
             { label: 'Clientes',         value: resumen.total_clientes,                color: '#06b6d4' },
-            { label: 'Total otorgado',   value: fmt(resumen.total_otorgado),           color: '#f59e0b' },
-            { label: 'Abonado período',  value: fmt(resumen.total_abonado_periodo),    color: '#4ade80' },
+            { label: 'Crédito período', value: fmt(resumen.total_otorgado),        color: '#f59e0b' },
+            { label: 'Abonado período',   value: fmt(resumen.total_abonado_periodo), color: '#4ade80' },
             { label: 'Saldo pendiente',  value: fmt(resumen.saldo_pendiente),          color: '#f87171' },
           ].map(c => (
             <div key={c.label} className="rounded-xl p-3"
@@ -1219,7 +1219,7 @@ function TabCartera() {
                       <td className="px-4 py-3">
                        {c.abonos.map((a, j) => (
                               <div key={j} className="text-xs" style={{ color: 'rgba(196,181,253,0.5)' }}>
-                                {new Date(a.created_at).toLocaleDateString('es-CO')} — 
+                                {new Date(a.created_at).toLocaleString('es-CO', { timeZone: 'America/Bogota', day: '2-digit', month: '2-digit', year: 'numeric' })} — 
                                 <span style={{ color: '#4ade80' }}> {fmt(a.monto)}</span>
                                 <span className="ml-1 px-1.5 py-0.5 rounded text-xs font-bold"
                                       style={{ background: 'rgba(139,92,246,0.15)', color: '#a78bfa' }}>

@@ -120,6 +120,8 @@ export default function ModalPago({ total, carrito, onExito, onCerrar }) {
 
     try {
       if (esCredito) {
+        const fpCredito = formasPago.find(fp => fp.nombre?.toLowerCase() === 'crédito')
+                       || formasPago.find(fp => fp.nombre?.toLowerCase() === 'credito')
         const payload = {
           detalle: carrito.map(item => ({
             producto_id: item.producto_id,
@@ -127,7 +129,7 @@ export default function ModalPago({ total, carrito, onExito, onCerrar }) {
             descuento:   item.descuento || 0,
           })),
           pagos: [{
-            forma_pago_id: formasPago[0]?.id,
+            forma_pago_id: fpCredito?.id || formasPago[0]?.id,
             monto:         total,
           }],
         }

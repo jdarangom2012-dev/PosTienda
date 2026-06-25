@@ -152,19 +152,12 @@ class CreditoViewSet(TiendaMixin, viewsets.ModelViewSet):
         
         abonos_qs = AbonoCredito.objects.filter(credito__tienda=tienda)
         if fecha_desde:
-            abonos_qs = abonos_qs.filter(
-                created_at__gte=bogota.localize(
-                    __import__('datetime').datetime.strptime(fecha_desde, '%Y-%m-%d')
-                )
-            )
+            abonos_qs = abonos_qs.filter(credito__created_at__date__gte=fecha_desde)
         if fecha_hasta:
-            from datetime import datetime, timedelta
-            hasta_dt = bogota.localize(
-                datetime.strptime(fecha_hasta, '%Y-%m-%d') + timedelta(days=1)
-            )
-            abonos_qs = abonos_qs.filter(created_at__lt=hasta_dt)
-            
+            abonos_qs = abonos_qs.filter(credito__created_at__date__lte=fecha_hasta)
+
         total_abonos_periodo = float(abonos_qs.aggregate(t=Sum('monto'))['t'] or 0)
+
     
         return Response({
             'total_creditos':        total_creditos,
