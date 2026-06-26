@@ -160,7 +160,7 @@ class CrearVentaSerializer(serializers.Serializer):
         # Validar que las formas de pago existen
         for pago in pagos:
             try:
-                FormaPago.objects.get(id=pago['forma_pago_id'], activa=True)
+                FormaPago.objects.get(id=pago['forma_pago_id'])
             except FormaPago.DoesNotExist:
                 raise serializers.ValidationError(
                     {'pagos': f'Forma de pago ID {pago["forma_pago_id"]} no encontrada.'}
