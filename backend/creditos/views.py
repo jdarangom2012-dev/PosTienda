@@ -90,29 +90,47 @@ class CreditoViewSet(TiendaMixin, viewsets.ModelViewSet):
         serializer = AbonarCreditoSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        monto = serializer.validated_data['monto']
-        nota  = serializer.validated_data.get('nota', '')
+        monto_total = serializer.validated_data['monto']
+        nota        = serializer.validated_data.get('nota', '')
+        forma_pago  = serializer.validated_data.get('forma_pago', 'EFECTIVO')
+        usuario     = Usuario.objects.get(pk=request.user.pk)
 
-        if monto > credito.saldo_pendiente:
+        # Obtener todos los créditos pendientes del cliente (misma tienda)
+        pendientes = Credito.objects.filter(
+            tienda               = credito.tienda,
+            cliente_nombre__iexact = credito.cliente_nombre,
+            estado               = 'PENDIENTE',
+        ).order_by('created_at')  # del más antiguo al más reciente
+
+        saldo_total = sum(c.saldo_pendiente for c in pendientes)
+
+        if monto_total > saldo_total:
             return Response({
-                'error': f'El monto supera el saldo pendiente de ${credito.saldo_pendiente:,.0f}.'
+                'error': f'El monto supera el saldo pendiente de ${saldo_total:,.0f}.'
             }, status=status.HTTP_400_BAD_REQUEST)
 
-        usuario = Usuario.objects.get(pk=request.user.pk)
-        AbonoCredito.objects.create(
-            credito = credito,
-            monto   = monto,
-            forma_pago = serializer.validated_data.get('forma_pago', 'EFECTIVO'),
-            nota    = nota,
-            usuario = usuario,
-        )
-
-        credito.total_abonado += monto
-        if credito.saldo_pendiente <= 0:
-            credito.estado = 'PAGADO'
-        credito.save()
-
+        # Distribuir el abono entre los créditos pendientes (del más antiguo al más nuevo)
+        monto_restante = Decimal(str(monto_total))
+        for c in pendientes:
+            if monto_restante <= 0:
+                break
+            aplicar = min(monto_restante, c.saldo_pendiente)
+            AbonoCredito.objects.create(
+                credito    = c,
+                monto      = aplicar,
+                forma_pago = forma_pago,
+                nota       = nota,
+                usuario    = usuario,
+            )
+            c.total_abonado += aplicar
+            if c.saldo_pendiente <= 0:
+                c.estado = 'PAGADO'
+            c.save()
+            monto_restante -= aplicar
+            
+        credito.refresh_from_db()
         return Response(CreditoSerializer(credito).data)
+    
 
     @action(detail=False, methods=['get'], url_path='resumen')
     def resumen(self, request):
