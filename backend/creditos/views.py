@@ -25,6 +25,7 @@ class CreditoViewSet(TiendaMixin, viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
     filter_backends    = [filters.SearchFilter]
     search_fields      = ['cliente_nombre', 'cliente_telefono']
+    pagination_class   = None  # ← agregar esta línea
 
     def get_queryset(self):
         qs          = super().get_queryset()
