@@ -5,7 +5,7 @@ from rest_framework          import viewsets, status, filters
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
-from django.db.models        import Sum, Q
+from django.db.models        import Sum, Q, Count
 from django.conf             import settings
 from django.utils            import timezone as tz
 from decimal                 import Decimal
@@ -211,3 +211,34 @@ class CreditoViewSet(TiendaMixin, viewsets.ModelViewSet):
             'total_abonos': total,
             'cantidad':     abonos.count(),
         })
+    
+    @action(detail=False, methods=['get'], url_path='clientes')
+    def clientes(self, request):
+        tienda = self.get_tienda()
+        search = request.query_params.get('search', '')
+
+        qs = Credito.objects.filter(tienda=tienda, estado='PENDIENTE')
+        if search:
+            qs = qs.filter(cliente_nombre__icontains=search)
+
+        resultado = (
+            qs.values('cliente_nombre', 'cliente_telefono')
+            .annotate(
+                suma_deuda=Sum('total_deuda'),
+                suma_abonado=Sum('total_abonado'),
+                total_creditos=Count('id'),
+            )
+            .order_by('cliente_nombre')
+        )
+
+        data = [
+            {
+                'cliente_nombre':   r['cliente_nombre'],
+                'cliente_telefono': r['cliente_telefono'],
+                'saldo_total':      float(r['suma_deuda'] or 0) - float(r['suma_abonado'] or 0),
+                'total_creditos':   r['total_creditos'],
+            }
+            for r in resultado
+        ]
+
+        return Response(data)
