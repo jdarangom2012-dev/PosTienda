@@ -218,7 +218,8 @@ class CreditoViewSet(TiendaMixin, viewsets.ModelViewSet):
         tienda = self.get_tienda()
         search = request.query_params.get('search', '')
 
-        qs = Credito.objects.filter(tienda=tienda, estado='PENDIENTE')
+        # Buscar en TODOS los estados, no solo PENDIENTE
+        qs = Credito.objects.filter(tienda=tienda)
         if search:
             qs = qs.filter(cliente_nombre__icontains=search)
 
@@ -230,6 +231,7 @@ class CreditoViewSet(TiendaMixin, viewsets.ModelViewSet):
                 total_creditos=Count('id'),
             )
             .order_by('cliente_nombre')
+            .distinct()
         )
 
         data = [
