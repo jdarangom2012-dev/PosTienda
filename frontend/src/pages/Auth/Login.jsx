@@ -190,10 +190,20 @@ export default function Login() {
           </form>
         </div>
 
-        <p className="text-center text-xs mt-6"
-           style={{ color: 'rgba(196,181,253,0.3)' }}>
-          PosFácil © {new Date().getFullYear()}
+        <div className="flex flex-col items-center mt-6 gap-1">
+          <a href="https://nautilustech.app/" target="_blank" rel="noopener noreferrer">
+            <img src="/LogoNautilusTech.png" alt="NautilusTech" className="h-6 opacity-60 hover:opacity-100 transition-opacity" />
+            </a>
+            <p className="text-center text-xs"
+            style={{ color: 'rgba(196,181,253,0.3)' }}>
+            Desarrollado por{' '}
+            <a href="https://nautilustech.app/" target="_blank" rel="noopener noreferrer"
+            style={{ color: 'rgba(0,210,211,0.6)' }}
+            className="hover:opacity-100 transition-opacity">
+            NautilusTech
+          </a>
         </p>
+        </div>
       </div>
     </div>
   )
