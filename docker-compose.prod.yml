@@ -23,12 +23,7 @@ services:
     build: ./frontend
     container_name: posfacil_frontend
     ports:
-      - "80:80"
-    depends_on:
-      - backend
-    restart: always
-    networks:
-      - posfacil_net
+      - "8081:80"
 
 networks:
   posfacil_net:
