@@ -91,7 +91,7 @@ class VentaViewSet(TiendaMixin, viewsets.ReadOnlyModelViewSet):
 
     @action(detail=False, methods=['get'], url_path='resumen-hoy')
     def resumen_hoy(self, request):
-        hoy = timezone.now().astimezone(timezone.get_current_timezone()).date()  # ← CORRECTO
+        hoy    = timezone.now().astimezone(timezone.get_current_timezone()).date()
         tienda = self.get_tienda()
 
         qs_base    = self.get_queryset().filter(fecha_hora__date=hoy)
@@ -104,7 +104,16 @@ class VentaViewSet(TiendaMixin, viewsets.ReadOnlyModelViewSet):
         )
         total_ingresos = float(agg['total_ingresos'] or 0)
         total_ventas   = agg['total_ventas'] or 0
-          # Separar contado vs crédito
+
+        # Filtros para VentaPago y VentaDetalle
+        pagos_filter = {
+            'venta__fecha_hora__date': hoy,
+            'venta__estado': 'COMPLETADA',
+        }
+        if tienda:
+            pagos_filter['venta__tienda'] = tienda
+
+        # Separar contado vs crédito
         ingresos_credito = VentaPago.objects.filter(
             **pagos_filter,
             forma_pago__nombre__icontains='crédito'
@@ -114,16 +123,6 @@ class VentaViewSet(TiendaMixin, viewsets.ReadOnlyModelViewSet):
             **pagos_filter,
             forma_pago__nombre__icontains='crédito'
         ).values('venta').distinct().count()
-
-        ingresos_contado = total_ingresos - float(ingresos_credito)
-        
-        # Filtros para VentaPago y VentaDetalle respetando tienda
-        pagos_filter = {
-            'venta__fecha_hora__date': hoy,
-            'venta__estado': 'COMPLETADA',
-        }
-        if tienda:
-            pagos_filter['venta__tienda'] = tienda
 
         pagos_hoy = VentaPago.objects.filter(
             **pagos_filter
@@ -139,18 +138,17 @@ class VentaViewSet(TiendaMixin, viewsets.ReadOnlyModelViewSet):
         ).order_by('-total_vendido')[:5]
 
         return Response({
-            'fecha':              str(hoy),
-            'total_ventas':       total_ventas,
-            'total_canceladas':   canceladas,
-            'total_ingresos':     total_ingresos,
-            'ingresos_contado':   float(total_ingresos - float(ingresos_credito)),
-            'ingresos_credito':   float(ingresos_credito),
-            'ventas_credito':     ventas_credito,
-            'ticket_promedio':    total_ingresos / max(total_ventas, 1),
-            'pagos_por_forma':    list(pagos_hoy),
-            'top_productos':      list(top_productos),
+            'fecha':            str(hoy),
+            'total_ventas':     total_ventas,
+            'total_canceladas': canceladas,
+            'total_ingresos':   total_ingresos,
+            'ingresos_contado': float(total_ingresos - float(ingresos_credito)),
+            'ingresos_credito': float(ingresos_credito),
+            'ventas_credito':   ventas_credito,
+            'ticket_promedio':  total_ingresos / max(total_ventas, 1),
+            'pagos_por_forma':  list(pagos_hoy),
+            'top_productos':    list(top_productos),
         })
-
     @action(detail=False, methods=['get'], url_path='resumen-semana')
     def resumen_semana(self, request):
         hoy    = timezone.now().astimezone(timezone.get_current_timezone()).date()
