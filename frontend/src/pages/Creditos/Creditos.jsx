@@ -28,7 +28,9 @@ function agruparPorCliente(creditos) {
     // Mantener la fecha más reciente
     if (new Date(c.created_at) > new Date(g.fecha_ultima)) g.fecha_ultima = c.created_at
   })
-  return Object.values(mapa)
+  return Object.values(mapa).sort((a, b) => 
+  a.cliente_nombre.localeCompare(b.cliente_nombre, 'es')
+  )
 }
 
 export default function Creditos() {
@@ -43,7 +45,7 @@ export default function Creditos() {
   const [detalleCliente, setDetalleCliente] = useState(null) // cliente expandido
 
   const [pagina,        setPagina]        = useState(1)
-  const ITEMS_POR_PAGINA = 10
+  const ITEMS_POR_PAGINA = 50
 
   const agrupados       = agruparPorCliente(creditos)
   const totalPaginas    = Math.ceil(agrupados.length / ITEMS_POR_PAGINA)
@@ -54,6 +56,7 @@ export default function Creditos() {
     setLoading(true)
     try {
       const params = {}
+      params.page_size = 500 
       if (busqueda)     params.search      = busqueda
       if (filtroEstado) params.estado      = filtroEstado
       if (fechaDesde)   params.fecha_desde = fechaDesde
@@ -188,10 +191,27 @@ export default function Creditos() {
             </thead>
             <tbody>
               {agrupadosPagina.map((g, i) => {
+                const letraActual = g.cliente_nombre?.[0]?.toUpperCase() || '#'
+                const letraAnterior = i > 0 ? agrupadosPagina[i-1].cliente_nombre?.[0]?.toUpperCase() : null
+                const mostrarSeparador = letraActual !== letraAnterior
                 const est = colorEstado(g.tiene_pendiente)
                 const expandido = detalleCliente === i
                 return (
                   <>
+                  {/* Separador de letra */}
+                    {mostrarSeparador && (
+                      <tr key={`sep-${letraActual}`}>
+                        <td colSpan={7} className="px-4 pt-4 pb-1">
+                          <div className="flex items-center gap-3">
+                            <span className="text-lg font-black"
+                                  style={{ color: '#7c3aed', fontFamily: 'Syne, sans-serif' }}>
+                              {letraActual}
+                            </span>
+                            <div className="flex-1 h-px" style={{ background: 'rgba(124,58,237,0.2)' }} />
+                          </div>
+                        </td>
+                      </tr>
+                    )}
                     {/* Fila resumen del cliente */}
                     <tr key={`g-${i}`}
                         className="transition-all cursor-pointer hover:bg-purple-900/10"
@@ -233,7 +253,21 @@ export default function Creditos() {
                       <td className="px-4 py-3">
                         {g.tiene_pendiente && (
                           <button
-                            onClick={e => { e.stopPropagation(); setModalAbono(g.creditos.find(c => c.estado === 'PENDIENTE')) }}
+                            // DESPUÉS — pasa un objeto virtual con el saldo total del cliente
+                            onClick={e => {
+                              e.stopPropagation()
+                              const pendientes = g.creditos.filter(c => c.estado === 'PENDIENTE')
+                              if (pendientes.length === 1) {
+                                setModalAbono(pendientes[0])
+                              } else {
+                                // Múltiples créditos — crear objeto virtual con el total
+                                setModalAbono({
+                                  id:               pendientes[0].id,  // usamos el más antiguo para el abono
+                                  cliente_nombre:   g.cliente_nombre,
+                                  saldo_pendiente:  g.saldo_pendiente, // total real de todos los pendientes
+                                })
+                              }
+                            }}
                             className="text-xs px-3 py-1.5 rounded-lg font-semibold transition-all hover:scale-105"
                             style={{ background: 'rgba(74,222,128,0.15)', border: '1px solid rgba(74,222,128,0.3)', color: '#4ade80' }}>
                             + Abono
@@ -340,7 +374,7 @@ export default function Creditos() {
       {modalAbono && (
         <ModalAbono
           credito={modalAbono}
-          onGuardado={() => { setModalAbono(null); cargar() }}
+          onGuardado={() => { setModalAbono(null); setCreditos([]); cargar() }}
           onCerrar={() => setModalAbono(null)}
         />
       )}
