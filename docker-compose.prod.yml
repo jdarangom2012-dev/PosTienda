@@ -1,20 +1,4 @@
 services:
-  db:
-    image: postgres:16
-    container_name: posfacil_db
-    environment:
-      POSTGRES_DB: postenda_qa
-      POSTGRES_USER: postienda
-      POSTGRES_PASSWORD: "12345"
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postienda -d postenda_qa"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    restart: always
-
   backend:
     build: ./backend
     container_name: posfacil_backend
@@ -24,15 +8,16 @@ services:
       DB_NAME: postenda_qa
       DB_USER: postienda
       DB_PASSWORD: "12345"
-      DB_HOST: db
+      DB_HOST: host.docker.internal
       DB_PORT: "5432"
       ALLOWED_HOSTS: "52.165.89.25,localhost,127.0.0.1"
       SECRET_KEY: django-prod-clave-muy-segura-generar-con-python
       CREDITO_TOPE_MAXIMO: "10000000000"
-    depends_on:
-      db:
-        condition: service_healthy
     restart: always
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    networks:
+      - posfacil_net
 
   frontend:
     build: ./frontend
@@ -42,6 +27,9 @@ services:
     depends_on:
       - backend
     restart: always
+    networks:
+      - posfacil_net
 
-volumes:
-  postgres_data:
+networks:
+  posfacil_net:
+    driver: bridge
