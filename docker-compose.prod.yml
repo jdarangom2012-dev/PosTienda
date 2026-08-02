@@ -10,9 +10,11 @@ services:
       DB_PASSWORD: "12345"
       DB_HOST: host.docker.internal
       DB_PORT: "5432"
-      ALLOWED_HOSTS: "52.165.89.25,localhost,127.0.0.1"
+      ALLOWED_HOSTS: "52.165.89.25,localhost,127.0.0.1,www.autoinventory.app,autoinventory.app"
       SECRET_KEY: django-prod-clave-muy-segura-generar-con-python
       CREDITO_TOPE_MAXIMO: "10000000000"
+    ports:
+      - "8000:8000"
     restart: always
     extra_hosts:
       - "host.docker.internal:host-gateway"
@@ -22,9 +24,30 @@ services:
   frontend:
     build: ./frontend
     container_name: posfacil_frontend
+    restart: always
+    networks:
+      - posfacil_net
+
+  caddy:
+    image: caddy:2-alpine
+    container_name: posfacil_caddy
     ports:
-      - "8081:80"
+      - "86:86"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - backend
+      - frontend
+    restart: always
+    networks:
+      - posfacil_net
 
 networks:
   posfacil_net:
     driver: bridge
+
+volumes:
+  caddy_data:
+  caddy_config:

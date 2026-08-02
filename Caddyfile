@@ -1,0 +1,13 @@
+{
+    https_port 86
+    http_port 8080
+}
+
+www.autoinventory.app:86 {
+    handle /api/* {
+        reverse_proxy backend:8000
+    }
+    handle {
+        reverse_proxy frontend:80
+    }
+}
