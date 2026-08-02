@@ -1,9 +1,11 @@
 {
     https_port 86
-    http_port 8080
+    http_port 8087
 }
 
 www.autoinventory.app:86 {
+    tls /data/caddy/certificates/acme-v02.api.letsencrypt.org-directory/www.autoinventory.app/www.autoinventory.app.crt /data/caddy/certificates/acme-v02.api.letsencrypt.org-directory/www.autoinventory.app/www.autoinventory.app.key
+    
     handle /api/* {
         reverse_proxy backend:8000
     }
