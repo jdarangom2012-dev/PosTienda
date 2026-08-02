@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { ventasService, creditosService } from '../../../services/api'
+import { ventasService, creditosService, clientesService } from '../../../services/api'
 
 export default function ModalPago({ total, carrito, onExito, onCerrar }) {
   const [formasPago,       setFormasPago]       = useState([])
@@ -10,7 +10,13 @@ export default function ModalPago({ total, carrito, onExito, onCerrar }) {
   const [error,            setError]             = useState('')
   const [esCredito,        setEsCredito]         = useState(false)
   const [clienteNombre,    setClienteNombre]     = useState('')
-  const [clienteTelefono,  setClienteTelefono]   = useState('')
+  const [clienteApellido,    setClienteApellido]    = useState('')
+  const [clienteTelefono, setClienteTelefono] = useState('')
+  const [busquedaCliente,    setBusquedaCliente]    = useState('')
+  const [clientesSugeridos,  setClientesSugeridos]  = useState([])
+  const [clienteSeleccionado, setClienteSeleccionado] = useState(null)
+  const [buscandoClientes,   setBuscandoClientes]   = useState(false)
+  
 
   useEffect(() => {
     const cargarFormasPago = async () => {
@@ -45,7 +51,9 @@ export default function ModalPago({ total, carrito, onExito, onCerrar }) {
   const monto  = parseFloat(montoPagado) || 0
   const cambio = esEfectivo ? monto - total : 0
   const valido = esCredito
-    ? clienteNombre.trim().length > 0
+    ? clienteSeleccionado
+      ? true
+      : (clienteNombre.trim().length > 0 && clienteApellido.trim().length > 0)
     : formaPagoId && (esEfectivo ? monto >= total : true)
 
   const seleccionarForma = (fp) => {
@@ -84,6 +92,28 @@ export default function ModalPago({ total, carrito, onExito, onCerrar }) {
     return ventaOffline
   }
 
+  const buscarClientes = async (texto) => {
+    setBusquedaCliente(texto)
+    setClienteSeleccionado(null)
+    if (texto.length < 2) { setClientesSugeridos([]); return }
+    setBuscandoClientes(true)
+    try {
+      const { data } = await clientesService.buscar(texto)
+      setClientesSugeridos(data)
+    } catch { setClientesSugeridos([]) }
+    finally { setBuscandoClientes(false) }
+  }
+
+  const seleccionarClienteExistente = (cliente) => {
+    const partes = cliente.cliente_nombre.split(' ')
+    setClienteNombre(partes[0] || '')
+    setClienteApellido(partes.slice(1).join(' ') || '')
+    setClienteTelefono(cliente.cliente_telefono || '')
+    setClienteSeleccionado(cliente)
+    setBusquedaCliente(cliente.cliente_nombre)
+    setClientesSugeridos([])
+  }
+
   const procesar = async () => {
     if (!valido) return
     setProcesando(true)
@@ -120,8 +150,6 @@ export default function ModalPago({ total, carrito, onExito, onCerrar }) {
 
     try {
       if (esCredito) {
-        const fpCredito = formasPago.find(fp => fp.nombre?.toLowerCase() === 'crédito')
-                       || formasPago.find(fp => fp.nombre?.toLowerCase() === 'credito')
         const payload = {
           detalle: carrito.map(item => ({
             producto_id: item.producto_id,
@@ -129,18 +157,20 @@ export default function ModalPago({ total, carrito, onExito, onCerrar }) {
             descuento:   item.descuento || 0,
           })),
           pagos: [{
-            forma_pago_id: fpCredito?.id || formasPago[0]?.id,
+            forma_pago_id: 4,   // FormaPago "Crédito" — siempre ID=4
             monto:         total,
           }],
         }
         const { data: ventaData } = await ventasService.procesar(payload)
         await creditosService.crear({
-          cliente_nombre:   clienteNombre.trim(),
-          cliente_telefono: clienteTelefono.trim(),
-          total_deuda:      total,
-          venta_id:         ventaData.venta.id,
-          notas:            `Venta #${ventaData.venta.id}`,
-        })
+        cliente_nombre: clienteSeleccionado
+          ? clienteSeleccionado.cliente_nombre
+          : `${clienteNombre.trim()} ${clienteApellido.trim()}`.toUpperCase(),
+        cliente_telefono: clienteTelefono.trim(),
+        total_deuda: total,
+        venta_id: ventaData.venta.id,
+        notas: `Venta #${ventaData.venta.id}`,
+      })
         onExito(ventaData, 0)
       } else {
         const payload = {
@@ -258,49 +288,111 @@ export default function ModalPago({ total, carrito, onExito, onCerrar }) {
         </div>
 
         {/* Campos crédito */}
-        {esCredito && (
-          <div className="space-y-3 mb-4 p-4 rounded-2xl"
-               style={{ background: 'rgba(245,158,11,0.06)', border: '1px solid rgba(245,158,11,0.15)' }}>
-            <p className="text-xs font-bold uppercase tracking-wider"
-               style={{ color: '#f59e0b' }}>
-              Datos del cliente
-            </p>
+      {esCredito && (
+      <div className="space-y-3 mb-4 p-4 rounded-2xl"
+          style={{ background: 'rgba(245,158,11,0.06)', border: '1px solid rgba(245,158,11,0.15)' }}>
+        <p className="text-xs font-bold uppercase tracking-wider" style={{ color: '#f59e0b' }}>
+          Datos del cliente
+        </p>
+
+        {/* Buscador cliente existente */}
+        <div className="relative">
+          <p className="text-xs mb-1" style={{ color: 'rgba(196,181,253,0.6)' }}>
+            Buscar cliente existente
+          </p>
+          <input
+            type="text"
+            value={busquedaCliente}
+            onChange={e => buscarClientes(e.target.value)}
+            placeholder="Escribe el nombre..."
+            className="input-pos w-full px-4 py-3 rounded-xl text-sm"
+          />
+          {/* Sugerencias */}
+          {clientesSugeridos.length > 0 && (
+            <div className="absolute z-50 w-full mt-1 rounded-xl overflow-hidden"
+                style={{ background: '#1e1b4b', border: '1px solid rgba(245,158,11,0.3)', boxShadow: '0 8px 24px rgba(0,0,0,0.4)' }}>
+              {clientesSugeridos.map((c, i) => (
+                <button key={i} onClick={() => seleccionarClienteExistente(c)}
+                        className="w-full px-4 py-3 text-left text-sm hover:bg-yellow-500/10 transition-all"
+                        style={{ borderBottom: i < clientesSugeridos.length - 1 ? '1px solid rgba(245,158,11,0.1)' : 'none' }}>
+                  <p className="font-bold text-white">{c.cliente_nombre}</p>
+                  <p className="text-xs" style={{ color: 'rgba(196,181,253,0.5)' }}>
+                    {c.cliente_telefono || 'Sin teléfono'} · Saldo: ${parseFloat(c.saldo_total || 0).toLocaleString('es-CO')}
+                  </p>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Cliente seleccionado */}
+        {clienteSeleccionado && (
+          <div className="flex items-center justify-between px-3 py-2 rounded-xl"
+              style={{ background: 'rgba(245,158,11,0.15)', border: '1px solid rgba(245,158,11,0.3)' }}>
             <div>
-              <p className="text-xs mb-1" style={{ color: 'rgba(196,181,253,0.6)' }}>
-                Nombre *
+              <p className="text-xs font-bold text-white">{clienteSeleccionado.cliente_nombre}</p>
+              <p className="text-xs" style={{ color: 'rgba(196,181,253,0.5)' }}>
+                Saldo actual: ${parseFloat(clienteSeleccionado.saldo_total || 0).toLocaleString('es-CO')}
               </p>
-              <input
-                type="text"
-                value={clienteNombre}
-                onChange={e => setClienteNombre(e.target.value)}
-                placeholder="Nombre del cliente"
-                className="input-pos w-full px-4 py-3 rounded-xl text-sm"
-              />
             </div>
-            <div>
-              <p className="text-xs mb-1" style={{ color: 'rgba(196,181,253,0.6)' }}>
-                Teléfono (opcional)
-              </p>
-              <input
-                type="text"
-                value={clienteTelefono}
-                onChange={e => setClienteTelefono(e.target.value)}
-                placeholder="Teléfono del cliente"
-                className="input-pos w-full px-4 py-3 rounded-xl text-sm"
-              />
-            </div>
-            <div className="flex items-center justify-between px-3 py-2 rounded-xl"
-                 style={{ background: 'rgba(245,158,11,0.1)' }}>
-              <span className="text-xs" style={{ color: 'rgba(196,181,253,0.6)' }}>
-                Deuda a registrar
-              </span>
-              <span className="text-sm font-black" style={{ color: '#f59e0b' }}>
-                ${total.toLocaleString('es-CO')}
-              </span>
-            </div>
+            <button onClick={() => {
+              setClienteSeleccionado(null)
+              setBusquedaCliente('')
+              setClienteNombre('')
+              setClienteApellido('')
+              setClienteTelefono('')
+            }} className="text-xs px-2 py-1 rounded-lg"
+                    style={{ background: 'rgba(239,68,68,0.1)', color: '#f87171' }}>
+              ✕
+            </button>
           </div>
         )}
 
+        {/* Separador */}
+        {!clienteSeleccionado && (
+          <div className="flex items-center gap-2">
+            <div className="flex-1 h-px" style={{ background: 'rgba(245,158,11,0.2)' }} />
+            <span className="text-xs" style={{ color: 'rgba(196,181,253,0.4)' }}>o nuevo cliente</span>
+            <div className="flex-1 h-px" style={{ background: 'rgba(245,158,11,0.2)' }} />
+          </div>
+        )}
+
+        {/* Campos manuales — solo si no hay cliente seleccionado */}
+        {!clienteSeleccionado && (
+          <>
+            <div>
+              <p className="text-xs mb-1" style={{ color: 'rgba(196,181,253,0.6)' }}>Nombre *</p>
+              <input type="text" value={clienteNombre}
+                    onChange={e => setClienteNombre(e.target.value)}
+                    placeholder="Nombre del cliente"
+                    className="input-pos w-full px-4 py-3 rounded-xl text-sm" />
+            </div>
+            <div>
+              <p className="text-xs mb-1" style={{ color: 'rgba(196,181,253,0.6)' }}>Apellido *</p>
+              <input type="text" value={clienteApellido}
+                    onChange={e => setClienteApellido(e.target.value)}
+                    placeholder="Apellido del cliente"
+                    className="input-pos w-full px-4 py-3 rounded-xl text-sm" />
+            </div>
+            <div>
+              <p className="text-xs mb-1" style={{ color: 'rgba(196,181,253,0.6)' }}>Teléfono (opcional)</p>
+              <input type="text" value={clienteTelefono}
+                    onChange={e => setClienteTelefono(e.target.value)}
+                    placeholder="Teléfono del cliente"
+                    className="input-pos w-full px-4 py-3 rounded-xl text-sm" />
+            </div>
+          </>
+        )}
+
+        <div className="flex items-center justify-between px-3 py-2 rounded-xl"
+            style={{ background: 'rgba(245,158,11,0.1)' }}>
+          <span className="text-xs" style={{ color: 'rgba(196,181,253,0.6)' }}>Deuda a registrar</span>
+          <span className="text-sm font-black" style={{ color: '#f59e0b' }}>
+            ${total.toLocaleString('es-CO')}
+          </span>
+        </div>
+      </div>
+    )}
         {/* Monto recibido — solo efectivo */}
         {esEfectivo && !esCredito && (
           <div className="mb-4">
