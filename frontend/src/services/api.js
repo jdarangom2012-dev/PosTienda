@@ -218,3 +218,7 @@ export const cajaService = {
   cerrar:    (data)   => api.put('/ventas/caja/', data),
   historial: (params) => api.get('/ventas/caja/historial/', { params }),
 }
+
+export const clientesService = {
+  buscar: (search) => api.get('/creditos/clientes/', { params: { search } }),
+}

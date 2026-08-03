@@ -21,4 +21,6 @@ class AuditoriaSerializer(serializers.ModelSerializer):
             'valor_anterior', 'valor_nuevo',
             'ip_dispositivo', 'detalle'
         )
-        read_only_fields = '__all__'
+        read_only_fields = ['id', 'fecha_hora', 'usuario_id_ref', 'usuario_nombre', 
+                    'accion', 'tabla_afectada', 'registro_id', 'valor_anterior',
+                    'valor_nuevo', 'ip_dispositivo', 'detalle']

@@ -16,6 +16,7 @@ import Usuarios      from './pages/Usuarios/Usuarios'
 import Categorias    from './pages/Productos/components/Categorias'
 import SuperAdmin    from './pages/SuperAdmin/SuperAdmin'
 import Creditos      from './pages/Creditos/Creditos'
+import Auditoria from './pages/Auditoria/Auditoria'
 
 // ← Componente separado para usar useLocation DENTRO del BrowserRouter
 function AppRoutes() {
@@ -42,6 +43,7 @@ function AppRoutes() {
         <Route path="/usuarios"   element={<Usuarios />} />
         <Route path="/categorias" element={<Categorias key={categoriasKey} />} />
         <Route path="/creditos"   element={<Creditos />} />
+        <Route path="/auditoria" element={<Auditoria />} />
       </Route>
       <Route path="/"  element={<Navigate to="/dashboard" replace />} />
       <Route path="*"  element={<Navigate to="/dashboard" replace />} />

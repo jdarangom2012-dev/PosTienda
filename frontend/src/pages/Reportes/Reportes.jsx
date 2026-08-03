@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { iaService, ventasService, inventarioService, productosService, creditosService } from '../../services/api'
 import GraficaVentas from './components/GraficaVentas'
 
+
 // ── Iconos ──────────────────────────────────────────────────
 const IconIA    = () => <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M12 2a10 10 0 1 0 10 10"/><path d="M12 6v6l4 2"/><circle cx="18" cy="6" r="3" fill="currentColor" opacity=".3"/></svg>
 const IconLock  = () => <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
@@ -738,6 +739,7 @@ function AbonosPeriodo({ fechaDesde, fechaHasta, fmt }) {
 function TabConsultas() {
   const fmt = (v) => `$${parseFloat(v || 0).toLocaleString('es-CO')}`
   const hoy = new Date().toISOString().slice(0, 10)
+  const [filtroEstadoInv, setFiltroEstadoInv] = useState('')
 
   // ── Sección 1: Ventas por período ──
   const [fechaDesde,   setFechaDesde]   = useState(hoy)
@@ -786,10 +788,20 @@ function TabConsultas() {
   const [busquedaInv,  setBusquedaInv]  = useState('')
   const INV_POR_PAGINA = 20
 
-  const inventarioFiltrado = inventario.filter(p =>
+  const inventarioFiltrado = inventario.filter(p => {
+  const stock  = parseFloat(p.cantidad_actual)
+  const minimo = parseFloat(p.stock_minimo || 0)
+  const estado = stock === 0 ? 'SINSTOCK' : stock <= minimo ? 'BAJO' : 'OK'
+
+  const matchBusqueda = 
     p.producto_nombre?.toLowerCase().includes(busquedaInv.toLowerCase()) ||
     p.categoria_nombre?.toLowerCase().includes(busquedaInv.toLowerCase())
-  )
+
+  const matchEstado = !filtroEstadoInv || estado === filtroEstadoInv
+
+  return matchBusqueda && matchEstado
+})
+
   const totalPaginasInv = Math.ceil(inventarioFiltrado.length / INV_POR_PAGINA)
   const inventarioPagina = inventarioFiltrado.slice((paginaInv - 1) * INV_POR_PAGINA, paginaInv * INV_POR_PAGINA)
 
@@ -814,13 +826,18 @@ function TabConsultas() {
   const exportarInventario = () => {
     if (!inventario.length) return
     const headers = ['Producto', 'Categoría', 'Stock', 'Stock mínimo', 'Estado']
-    const rows = inventario.map(p => [
-      p.producto?.nombre || p.nombre,
-      p.producto?.categoria_nombre || '—',
-      parseFloat(p.cantidad_actual),
-      parseFloat(p.producto?.stock_minimo || 0),
-      parseFloat(p.cantidad_actual) <= parseFloat(p.producto?.stock_minimo || 0) ? 'BAJO MÍNIMO' : 'OK',
-    ])
+    const rows = inventario.map(p => {
+      const stock  = parseFloat(p.cantidad_actual)
+      const minimo = parseFloat(p.stock_minimo || 0)
+      const estado = stock === 0 ? 'SIN STOCK' : stock <= minimo ? 'BAJO MÍNIMO' : 'OK'
+      return [
+        p.producto_nombre || '—',
+        p.categoria_nombre || '—',
+        stock,
+        minimo,
+        estado,
+      ]
+    })
     const csv = [headers, ...rows]
       .map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(','))
       .join('\n')
@@ -949,6 +966,17 @@ function TabConsultas() {
               className="input-pos px-3 py-2.5 rounded-xl text-sm w-52"
             />
           </div>
+          <select
+            value={filtroEstadoInv}
+            onChange={e => { setFiltroEstadoInv(e.target.value); setPaginaInv(1) }}
+            className="input-pos px-3 py-2.5 rounded-xl text-sm"
+            style={{ background: '#1e1b4b', color: '#e2e8f0' }}
+          >
+            <option value="">Todos los estados</option>
+            <option value="OK">✓ OK</option>
+            <option value="BAJO">⚠️ Bajo mínimo</option>
+            <option value="SINSTOCK">🔴 Sin stock</option>
+          </select>
           <button onClick={buscarInventario} disabled={loadingI}
                   className="btn-primary px-5 py-2.5 rounded-xl text-sm font-bold text-white disabled:opacity-50">
             {loadingI ? 'Consultando...' : '🔍 Ver inventario'}
@@ -977,7 +1005,9 @@ function TabConsultas() {
                 {inventarioPagina.map((p, i) => {
                   const stock  = parseFloat(p.cantidad_actual)
                   const minimo = parseFloat(p.stock_minimo || 0)
-                  const bajo   = stock <= minimo
+                  const sinStock = stock === 0
+                  const bajo     = !sinStock && stock <= minimo
+                  
                   return (
                     <tr key={i} style={{
                       borderBottom: '1px solid rgba(139,92,246,0.07)',
@@ -988,16 +1018,18 @@ function TabConsultas() {
                       {p.categoria_nombre || '—'}
                     </td>
                     <td className="px-4 py-2.5 text-sm font-bold"
-                        style={{ color: bajo ? '#f87171' : '#4ade80' }}>
+                        style={{ color: sinStock ? '#dc2626' : bajo ? '#f87171' : '#4ade80' }}>
                       {stock}
                     </td>
                     <td className="px-4 py-2.5 text-xs" style={{ color: 'rgba(196,181,253,0.4)' }}>{p.stock_minimo}</td>
                       <td className="px-4 py-2.5">
                         <span className="text-xs px-2 py-0.5 rounded-lg font-medium"
-                              style={bajo
-                                ? { background: 'rgba(239,68,68,0.1)', color: '#f87171' }
-                                : { background: 'rgba(74,222,128,0.1)', color: '#4ade80' }}>
-                          {bajo ? '⚠️ Bajo mínimo' : '✓ OK'}
+                                  style={sinStock
+                                  ? { background: 'rgba(220,38,38,0.15)', color: '#dc2626' }
+                                  : bajo
+                                  ? { background: 'rgba(239,68,68,0.1)', color: '#f87171' }
+                                  : { background: 'rgba(74,222,128,0.1)', color: '#4ade80' }}>
+                          {sinStock ? '🔴 Sin stock' : bajo ? '⚠️ Bajo mínimo' : '✓ OK'}
                         </span>
                       </td>
                     </tr>

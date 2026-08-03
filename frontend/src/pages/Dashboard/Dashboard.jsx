@@ -26,18 +26,17 @@ export default function Dashboard() {
   const [montoReal,    setMontoReal]    = useState('')
   const [notasCaja,    setNotasCaja]    = useState('')
   const [loadingCaja,  setLoadingCaja]  = useState(false)
-  useEffect(() => {
+   useEffect(() => {
     const cargar = async () => {
       setLoading(true)
       try {
-        const [r, s, a, v, c, ab, cj] = await Promise.all([
+        const [r, s, a, v, c, ab] = await Promise.all([
           ventasService.resumenHoy(),
           ventasService.resumenSemana(),
           inventarioService.alertas(),
           ventasService.hoy(),
           creditosService.resumen(),
           creditosService.abonosHoy(),
-          cajaService.estado(),
         ])
         setResumen(r.data)
         setSemana(s.data.por_dia || [])
@@ -45,16 +44,21 @@ export default function Dashboard() {
         setVentasHoy(v.data || [])
         setCartera(c.data)
         setAbonosHoy(ab.data)
-        setCaja(cj.data)
       } catch (err) {
         console.error('Error cargando dashboard:', err)
       } finally {
         setLoading(false)
       }
+
+      try {
+        const cj = await cajaService.estado()
+        setCaja(cj.data)
+      } catch {
+        setCaja(null)
+      }
     }
     cargar()
   }, [])
-
   const formatCOP = (n) =>
     `$${parseFloat(n || 0).toLocaleString('es-CO')}`
   
