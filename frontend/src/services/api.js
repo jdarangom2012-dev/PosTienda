@@ -43,11 +43,12 @@ api.interceptors.response.use(
         original.headers.Authorization = `Bearer ${data.access}`
         return api(original)
       } catch {
-        // Refresh falló — limpiar sesión y redirigir
-        localStorage.removeItem('access_token')
-        localStorage.removeItem('refresh_token')
-        localStorage.removeItem('usuario')
-        window.location.href = '/login'
+         if (navigator.onLine) {
+          localStorage.removeItem('access_token')
+          localStorage.removeItem('refresh_token')
+          localStorage.removeItem('usuario')
+          window.location.href = '/login'
+        }
         return Promise.reject(error)
       }
     }
@@ -181,20 +182,24 @@ if (typeof window !== 'undefined') {
       if (err.response?.status === 401) {
         const refresh = localStorage.getItem('refresh_token')
         if (!refresh) {
-          localStorage.removeItem('access_token')
-          localStorage.removeItem('refresh_token')
-          localStorage.removeItem('usuario')
-          window.location.href = '/login'
+          if (navigator.onLine) {
+            localStorage.removeItem('access_token')
+            localStorage.removeItem('refresh_token')
+            localStorage.removeItem('usuario')
+            window.location.href = '/login'
+          }
           return
         }
         try {
           const { data } = await axios.post('/api/usuarios/token/refresh/', { refresh })
           localStorage.setItem('access_token', data.access)
         } catch {
-          localStorage.removeItem('access_token')
-          localStorage.removeItem('refresh_token')
-          localStorage.removeItem('usuario')
-          window.location.href = '/login'
+          if (navigator.onLine) {
+            localStorage.removeItem('access_token')
+            localStorage.removeItem('refresh_token')
+            localStorage.removeItem('usuario')
+            window.location.href = '/login'
+          }
         }
       }
     }
