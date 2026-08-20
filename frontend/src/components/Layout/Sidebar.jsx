@@ -19,7 +19,9 @@
 // ============================================================
 import { NavLink, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+
+
 
 const NAV_ITEMS = [
   {
@@ -186,11 +188,24 @@ function LogoIcon({ size = 32 }) {
 export default function Sidebar({ collapsed, onToggle }) {
   const { usuario, logout } = useAuth()
   const navigate = useNavigate()
+  const [isOnline, setIsOnline] = useState(navigator.onLine)  
   const itemsVisibles = NAV_ITEMS.filter(item =>
     item.roles.includes(usuario?.rol)
   )
 
+  useEffect(() => {                                             // ← nuevo
+    const goOnline = () => setIsOnline(true)
+    const goOffline = () => setIsOnline(false)
+    window.addEventListener('online', goOnline)
+    window.addEventListener('offline', goOffline)
+    return () => {
+      window.removeEventListener('online', goOnline)
+      window.removeEventListener('offline', goOffline)
+    }
+  }, [])
+
   const handleLogout = async () => {
+    if (!isOnline) return   // ← bloqueo extra de seguridad
     await logout()
     navigate('/login')
   }
@@ -287,15 +302,21 @@ export default function Sidebar({ collapsed, onToggle }) {
         )}
 
         <button
-          onClick={handleLogout}
-          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl
-                     text-sm transition-all duration-200 group"
-          style={{ color: 'rgba(196,181,253,0.5)' }}
-          onMouseEnter={e => e.currentTarget.style.color = '#fca5a5'}
-          onMouseLeave={e => e.currentTarget.style.color = 'rgba(196,181,253,0.5)'}>
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
-               stroke="currentColor" strokeWidth="2" strokeLinecap="round"
-               className="flex-shrink-0">
+            onClick={handleLogout}
+            disabled={!isOnline}
+            title={!isOnline ? 'No puedes cerrar sesión sin conexión a internet' : ''}
+            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl
+              text-sm transition-all duration-200 group"
+            style={{
+              color: 'rgba(196,181,253,0.5)',
+              opacity: !isOnline ? 0.4 : 1,                    // ← feedback visual
+              cursor: !isOnline ? 'not-allowed' : 'pointer',    // ← feedback visual
+            }}
+            onMouseEnter={e => { if (isOnline) e.currentTarget.style.color = '#fca5a5' }}
+            onMouseLeave={e => { if (isOnline) e.currentTarget.style.color = 'rgba(196,181,253,0.5)' }}>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+              stroke="currentColor" strokeWidth="2" strokeLinecap="round"
+              className="flex-shrink-0">
             <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
             <polyline points="16 17 21 12 16 7"/>
             <line x1="21" y1="12" x2="9" y2="12"/>

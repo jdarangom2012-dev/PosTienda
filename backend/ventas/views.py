@@ -302,6 +302,58 @@ class VentaViewSet(TiendaMixin, viewsets.ReadOnlyModelViewSet):
             ],
         })
 
+
+    @action(detail=False, methods=['get'], url_path='ventas-por-producto')
+    def ventas_por_producto(self, request):
+        fecha_desde = request.query_params.get('fecha_desde')
+        fecha_hasta = request.query_params.get('fecha_hasta')
+        producto_id = request.query_params.get('producto_id')  # opcional
+        tienda      = self.get_tienda()
+
+        if not fecha_desde or not fecha_hasta:
+            return Response({'error': 'Debes enviar fecha_desde y fecha_hasta.'}, status=400)
+
+        detalle_filter = {
+            'venta__fecha_hora__date__gte': fecha_desde,
+            'venta__fecha_hora__date__lte': fecha_hasta,
+            'venta__estado': 'COMPLETADA',
+        }
+        if tienda:
+            detalle_filter['venta__tienda'] = tienda
+        if producto_id:
+            detalle_filter['producto_id'] = producto_id
+
+        detalles = VentaDetalle.objects.filter(
+            **detalle_filter
+        ).select_related('producto', 'venta').order_by('venta__fecha_hora')
+
+        filas = [
+            {
+                'venta_id':        d.venta.id,
+                'fecha_hora':      str(d.venta.fecha_hora),
+                'producto_id':     d.producto.id,
+                'producto_nombre': d.producto.nombre,
+                'cantidad':        float(d.cantidad),
+                'precio_unit':     float(d.precio_unit),
+                'valor':           float(d.subtotal),
+            }
+            for d in detalles
+        ]
+
+        totales = detalles.aggregate(
+            total_cantidad=Sum('cantidad'),
+            total_valor=Sum('subtotal'),
+        )
+
+        return Response({
+            'desde':          fecha_desde,
+            'hasta':          fecha_hasta,
+            'total_registros': len(filas),
+            'total_cantidad':  float(totales['total_cantidad'] or 0),
+            'total_valor':     float(totales['total_valor'] or 0),
+            'ventas':          filas,
+        })
+
 class ProcesarVentaView(APIView):
     permission_classes = [IsAuthenticated]
 

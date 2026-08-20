@@ -735,6 +735,163 @@ function AbonosPeriodo({ fechaDesde, fechaHasta, fmt }) {
     </div>
   )
 }
+
+// ── Ventas por producto ──────────────────────────────────────
+function TabVentasPorProducto() {
+  const fmt = (v) => `$${parseFloat(v || 0).toLocaleString('es-CO')}`
+  const hoy = new Date().toISOString().slice(0, 10)
+
+  const [fechaDesde, setFechaDesde] = useState(hoy)
+  const [fechaHasta, setFechaHasta] = useState(hoy)
+  const [datos,      setDatos]      = useState(null)
+  const [loading,    setLoading]    = useState(false)
+  const [pagina,     setPagina]     = useState(1)
+  const POR_PAGINA = 15
+
+  const buscar = useCallback(async () => {
+    if (!fechaDesde || !fechaHasta) return
+    setLoading(true)
+    try {
+      const { data } = await ventasService.ventasPorProducto({ fecha_desde: fechaDesde, fecha_hasta: fechaHasta })
+      setDatos(data)
+      setPagina(1)
+    } catch (err) { console.error(err) }
+    finally { setLoading(false) }
+  }, [fechaDesde, fechaHasta])
+
+  useEffect(() => { buscar() }, [buscar])
+
+  const exportarExcel = () => {
+    if (!datos?.ventas?.length) return
+    const headers = ['Fecha', 'Producto', 'Cantidad', 'Valor']
+    const rows = datos.ventas.map(v => [
+      new Date(v.fecha_hora).toLocaleDateString('es-CO', { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit' }),
+      v.producto_nombre,
+      v.cantidad,
+      v.valor,
+    ])
+    const csv = [headers, ...rows]
+      .map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(','))
+      .join('\n')
+    const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' })
+    const a = document.createElement('a')
+    a.href = URL.createObjectURL(blob)
+    a.download = `ventas_por_producto_${fechaDesde}_${fechaHasta}.csv`
+    a.click()
+  }
+
+  const filas = datos?.ventas || []
+  const totalPaginas = Math.ceil(filas.length / POR_PAGINA)
+  const filasPagina = filas.slice((pagina-1)*POR_PAGINA, pagina*POR_PAGINA)
+
+  return (
+    <div className="glass rounded-2xl p-5 space-y-4">
+      <h3 className="text-base font-bold text-white" style={{ fontFamily: 'Syne, sans-serif' }}>
+        🛒 Ventas por producto
+      </h3>
+
+      <div className="flex flex-wrap gap-3 items-end">
+        <div>
+          <p className="text-xs mb-1" style={{ color: 'rgba(196,181,253,0.4)' }}>Desde</p>
+          <input type="date" value={fechaDesde}
+                 onChange={e => setFechaDesde(e.target.value)}
+                 className="input-pos px-3 py-2.5 rounded-xl text-sm" />
+        </div>
+        <div>
+          <p className="text-xs mb-1" style={{ color: 'rgba(196,181,253,0.4)' }}>Hasta</p>
+          <input type="date" value={fechaHasta}
+                 onChange={e => setFechaHasta(e.target.value)}
+                 className="input-pos px-3 py-2.5 rounded-xl text-sm" />
+        </div>
+        <button onClick={buscar} disabled={loading}
+                className="btn-primary px-5 py-2.5 rounded-xl text-sm font-bold text-white disabled:opacity-50">
+          {loading ? 'Consultando...' : '🔍 Consultar'}
+        </button>
+        {filas.length > 0 && (
+          <button onClick={exportarExcel}
+                  className="px-5 py-2.5 rounded-xl text-sm font-bold"
+                  style={{ background: 'rgba(74,222,128,0.1)', color: '#4ade80', border: '1px solid rgba(74,222,128,0.2)' }}>
+            📥 Exportar Excel
+          </button>
+        )}
+      </div>
+
+      {datos && (
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+          {[
+            { label: 'Registros',        value: datos.total_registros, color: '#8b5cf6' },
+            { label: 'Unidades totales', value: parseFloat(datos.total_cantidad).toLocaleString('es-CO'), color: '#06b6d4' },
+            { label: 'Valor total',      value: fmt(datos.total_valor), color: '#4ade80' },
+          ].map(c => (
+            <div key={c.label} className="rounded-xl p-3"
+                 style={{ background: 'rgba(139,92,246,0.06)', border: '1px solid rgba(139,92,246,0.12)' }}>
+              <p className="text-xs mb-1" style={{ color: 'rgba(196,181,253,0.4)' }}>{c.label}</p>
+              <p className="text-lg font-black" style={{ color: c.color, fontFamily: 'Syne, sans-serif' }}>{c.value}</p>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {loading ? (
+        <div className="flex justify-center py-8">
+          <div className="w-8 h-8 rounded-full border-2 border-purple-500 border-t-transparent animate-spin" />
+        </div>
+      ) : filas.length > 0 ? (
+        <div className="space-y-2">
+          <div className="overflow-x-auto rounded-xl" style={{ border: '1px solid rgba(139,92,246,0.12)' }}>
+            <table className="w-full">
+              <thead>
+                <tr style={{ borderBottom: '1px solid rgba(139,92,246,0.15)' }}>
+                  {['Fecha', 'Producto', 'Cantidad', 'Valor'].map(h => (
+                    <th key={h} className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider"
+                        style={{ color: 'rgba(196,181,253,0.4)' }}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {filasPagina.map((v, i) => (
+                  <tr key={`${v.venta_id}-${i}`} style={{
+                    borderBottom: '1px solid rgba(139,92,246,0.07)',
+                    background: i % 2 === 0 ? 'transparent' : 'rgba(139,92,246,0.02)',
+                  }}>
+                    <td className="px-4 py-2.5 text-xs" style={{ color: 'rgba(196,181,253,0.5)' }}>
+                      {new Date(v.fecha_hora).toLocaleDateString('es-CO', { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit' })}
+                    </td>
+                    <td className="px-4 py-2.5 text-sm text-white font-medium">{v.producto_nombre}</td>
+                    <td className="px-4 py-2.5 text-sm font-bold" style={{ color: '#a78bfa' }}>{v.cantidad}</td>
+                    <td className="px-4 py-2.5 text-sm font-bold" style={{ color: '#4ade80' }}>{fmt(v.valor)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {totalPaginas > 1 && (
+            <div className="flex items-center justify-between px-1 pt-2">
+              <p className="text-xs" style={{ color: 'rgba(196,181,253,0.4)' }}>
+                {filas.length} registros · Página {pagina} de {totalPaginas}
+              </p>
+              <div className="flex gap-2">
+                <button onClick={() => setPagina(p => Math.max(1, p-1))} disabled={pagina===1}
+                        className="px-3 py-1 rounded-lg text-xs font-bold disabled:opacity-30"
+                        style={{ background: 'rgba(139,92,246,0.1)', color: '#a78bfa' }}>← Ant</button>
+                <button onClick={() => setPagina(p => Math.min(totalPaginas, p+1))} disabled={pagina===totalPaginas}
+                        className="px-3 py-1 rounded-lg text-xs font-bold disabled:opacity-30"
+                        style={{ background: 'rgba(139,92,246,0.1)', color: '#a78bfa' }}>Sig →</button>
+              </div>
+            </div>
+          )}
+        </div>
+      ) : (
+        <div className="flex flex-col items-center justify-center py-8 gap-2">
+          <p className="text-2xl">🛒</p>
+          <p className="text-sm text-white">Sin ventas en este período</p>
+        </div>
+      )}
+    </div>
+  )
+}
+
 // ── Tab Consultas ────────────────────────────────────────────
 function TabConsultas() {
   const fmt = (v) => `$${parseFloat(v || 0).toLocaleString('es-CO')}`
@@ -937,7 +1094,8 @@ function TabConsultas() {
           </div>
         )}
       </div>
-
+      {/* ── VENTAS POR PRODUCTO ── */}
+      <TabVentasPorProducto />
       {/* ── INVENTARIO EN FECHA ── */}
       <div className="glass rounded-2xl p-5 space-y-4">
         <h3 className="text-base font-bold text-white" style={{ fontFamily: 'Syne, sans-serif' }}>

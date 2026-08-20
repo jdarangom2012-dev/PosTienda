@@ -3,6 +3,8 @@
     "baudrate": 9600,
     "servidor_puerto": 8765,
     "servidor_host": "localhost",
+    "tipo_conexion": "usb", 
+    "nombre_impresora": "POS-80C", 
     "log_ruta": "D:\\Obras\\PosTienda\\backend\\CajonPOS\\logs\\cajon.log",
     "timeout": 3
 }

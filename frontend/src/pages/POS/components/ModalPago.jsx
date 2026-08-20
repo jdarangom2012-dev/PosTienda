@@ -123,6 +123,17 @@ export default function ModalPago({ total, carrito, onExito, onCerrar }) {
     if (!navigator.onLine) {
       const ventaOffline = guardarVentaOffline()
       // Simular respuesta exitosa para el ticket
+       // El cajón es tráfico 100% local (localhost) — abre igual aunque no haya internet
+      if (esEfectivo) {
+        try {
+          await fetch('http://localhost:8765/abrir-cajon', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+          })
+        } catch {
+          console.warn('CajonPOS no disponible')
+        }
+      }
       onExito({
         venta: {
           id:         ventaOffline.id,

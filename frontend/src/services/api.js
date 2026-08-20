@@ -56,18 +56,19 @@ api.interceptors.response.use(
   }
 )
 
-// ── Auto-logout por inactividad (8 horas) ────────────────────
-const TIEMPO_INACTIVIDAD = 10 * 60 * 60 * 1000 // 8 horas en ms
+const TIEMPO_INACTIVIDAD = 16 * 60 * 60 * 1000 // 16 horas — cubre cierre nocturno completo
 let timerInactividad = null
 
 const resetTimer = () => {
   if (timerInactividad) clearTimeout(timerInactividad)
-    timerInactividad = setTimeout(() => {
+  timerInactividad = setTimeout(() => {
+    if (navigator.onLine) {
       localStorage.removeItem('access_token')
       localStorage.removeItem('refresh_token')
       localStorage.removeItem('usuario')
       window.location.href = '/login'
-    }, TIEMPO_INACTIVIDAD)
+    }
+  }, TIEMPO_INACTIVIDAD)
 }
 
 // Detectar actividad del usuario
@@ -129,6 +130,7 @@ export const ventasService = {
   resumenSemana: ()       => api.get('/ventas/historial/resumen-semana/'),
   formasPago:    ()       => api.get('/ventas/formas-pago/activas/'),
   resumenPeriodo: (params) => api.get('/ventas/historial/resumen-periodo/', { params }),
+  ventasPorProducto: (params) => api.get('/ventas/historial/ventas-por-producto/', { params }), // ← ¿está esta línea?
 }
 
 // Servicios de IA

@@ -78,3 +78,195 @@
 2026-04-25 16:38:20,278 [INFO] [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
  * Running on http://localhost:8765
 2026-04-25 16:38:20,278 [INFO] [33mPress CTRL+C to quit[0m
+2026-08-16 18:21:40,431 [INFO] ==================================================
+2026-08-16 18:21:40,431 [INFO] 🚀 CajonPOS iniciando...
+2026-08-16 18:21:40,431 [INFO]    Puerto COM:     COM3
+2026-08-16 18:21:40,431 [INFO]    Servidor:       http://localhost:8765
+2026-08-16 18:21:40,431 [INFO]    Log:            D:\Obras\PosTienda\backend\CajonPOS\logs\cajon.log
+2026-08-16 18:21:40,431 [INFO] ==================================================
+2026-08-16 18:21:40,449 [INFO] Puertos COM disponibles:
+2026-08-16 18:21:40,449 [INFO]    COM3 — Serie estándar sobre el vínculo Bluetooth (COM3)
+2026-08-16 18:21:40,449 [INFO]    COM4 — Serie estándar sobre el vínculo Bluetooth (COM4)
+2026-08-16 18:21:40,463 [INFO] [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://localhost:8765
+2026-08-16 18:21:40,463 [INFO] [33mPress CTRL+C to quit[0m
+2026-08-16 18:21:49,179 [INFO] ==================================================
+2026-08-16 18:21:49,179 [INFO] 🚀 CajonPOS iniciando...
+2026-08-16 18:21:49,180 [INFO]    Puerto COM:     COM3
+2026-08-16 18:21:49,180 [INFO]    Servidor:       http://localhost:8765
+2026-08-16 18:21:49,180 [INFO]    Log:            D:\Obras\PosTienda\backend\CajonPOS\logs\cajon.log
+2026-08-16 18:21:49,180 [INFO] ==================================================
+2026-08-16 18:21:49,182 [INFO] Puertos COM disponibles:
+2026-08-16 18:21:49,182 [INFO]    COM3 — Serie estándar sobre el vínculo Bluetooth (COM3)
+2026-08-16 18:21:49,182 [INFO]    COM4 — Serie estándar sobre el vínculo Bluetooth (COM4)
+2026-08-16 18:21:49,205 [INFO] [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://localhost:8765
+2026-08-16 18:21:49,205 [INFO] [33mPress CTRL+C to quit[0m
+2026-08-16 18:47:49,268 [INFO] 127.0.0.1 - - [16/Aug/2026 18:47:49] "[31m[1mGET /abrir-cajon HTTP/1.1[0m" 405 -
+2026-08-16 18:48:09,651 [INFO] ==================================================
+2026-08-16 18:48:09,651 [INFO] 🚀 CajonPOS iniciando...
+2026-08-16 18:48:09,651 [INFO]    Puerto COM:     COM3
+2026-08-16 18:48:09,651 [INFO]    Servidor:       http://localhost:8765
+2026-08-16 18:48:09,651 [INFO]    Log:            D:\Obras\PosTienda\backend\CajonPOS\logs\cajon.log
+2026-08-16 18:48:09,651 [INFO] ==================================================
+2026-08-16 18:48:09,674 [INFO] Puertos COM disponibles:
+2026-08-16 18:48:09,674 [INFO]    COM3 — Serie estándar sobre el vínculo Bluetooth (COM3)
+2026-08-16 18:48:09,674 [INFO]    COM4 — Serie estándar sobre el vínculo Bluetooth (COM4)
+2026-08-16 18:48:09,689 [INFO] [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://localhost:8765
+2026-08-16 18:48:09,689 [INFO] [33mPress CTRL+C to quit[0m
+2026-08-16 18:48:14,970 [INFO] 127.0.0.1 - - [16/Aug/2026 18:48:14] "[31m[1mGET /abrir-cajon HTTP/1.1[0m" 405 -
+2026-08-16 18:48:29,860 [INFO] 127.0.0.1 - - [16/Aug/2026 18:48:29] "[31m[1mGET /abrir-cajon HTTP/1.1[0m" 405 -
+2026-08-16 18:49:30,998 [INFO] 127.0.0.1 - - [16/Aug/2026 18:49:30] "[33mGET /ping%20— HTTP/1.1[0m" 404 -
+2026-08-16 18:49:36,781 [INFO] 🏓 Ping recibido
+2026-08-16 18:49:36,784 [INFO] 127.0.0.1 - - [16/Aug/2026 18:49:36] "GET /ping HTTP/1.1" 200 -
+2026-08-16 18:50:56,072 [INFO] 🏓 Ping recibido
+2026-08-16 18:50:56,072 [INFO] 127.0.0.1 - - [16/Aug/2026 18:50:56] "GET /ping HTTP/1.1" 200 -
+2026-08-16 18:51:18,526 [INFO] ==================================================
+2026-08-16 18:51:18,526 [INFO] 🚀 CajonPOS iniciando...
+2026-08-16 18:51:18,526 [INFO]    Tipo conexión:  usb
+2026-08-16 18:51:18,526 [INFO]    Impresora USB:  POS-80C
+2026-08-16 18:51:18,526 [INFO]    Servidor:       http://localhost:8765
+2026-08-16 18:51:18,526 [INFO]    Log:            D:\Obras\PosTienda\backend\CajonPOS\logs\cajon.log
+2026-08-16 18:51:18,526 [INFO] ==================================================
+2026-08-16 18:51:18,544 [INFO] Puertos COM disponibles:
+2026-08-16 18:51:18,544 [INFO]    COM3 — Serie estándar sobre el vínculo Bluetooth (COM3)
+2026-08-16 18:51:18,544 [INFO]    COM4 — Serie estándar sobre el vínculo Bluetooth (COM4)
+2026-08-16 18:51:18,546 [INFO] Impresoras instaladas en Windows:
+2026-08-16 18:51:18,546 [INFO]    POS-80C
+2026-08-16 18:51:18,546 [INFO]    OneNote (escritorio) - Impresora virtual protegida
+2026-08-16 18:51:18,547 [INFO]    OneNote (Desktop)
+2026-08-16 18:51:18,547 [INFO]    NPI04402F (HP Color LaserJet MFP M283fdw)
+2026-08-16 18:51:18,547 [INFO]    Microsoft Print to PDF
+2026-08-16 18:51:18,560 [INFO] [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://localhost:8765
+2026-08-16 18:51:18,566 [INFO] [33mPress CTRL+C to quit[0m
+2026-08-16 18:51:24,125 [INFO] 🏓 Ping recibido
+2026-08-16 18:51:24,125 [INFO] 127.0.0.1 - - [16/Aug/2026 18:51:24] "GET /ping HTTP/1.1" 200 -
+2026-08-16 18:52:19,651 [INFO] ==================================================
+2026-08-16 18:52:19,651 [INFO] 🚀 CajonPOS iniciando...
+2026-08-16 18:52:19,651 [INFO]    Tipo conexión:  usb
+2026-08-16 18:52:19,651 [INFO]    Impresora USB:  POS-80C
+2026-08-16 18:52:19,651 [INFO]    Servidor:       http://localhost:8765
+2026-08-16 18:52:19,651 [INFO]    Log:            D:\Obras\PosTienda\backend\CajonPOS\logs\cajon.log
+2026-08-16 18:52:19,651 [INFO] ==================================================
+2026-08-16 18:52:19,660 [INFO] Puertos COM disponibles:
+2026-08-16 18:52:19,660 [INFO]    COM3 — Serie estándar sobre el vínculo Bluetooth (COM3)
+2026-08-16 18:52:19,660 [INFO]    COM4 — Serie estándar sobre el vínculo Bluetooth (COM4)
+2026-08-16 18:52:19,662 [INFO] Impresoras instaladas en Windows:
+2026-08-16 18:52:19,662 [INFO]    POS-80C
+2026-08-16 18:52:19,662 [INFO]    OneNote (escritorio) - Impresora virtual protegida
+2026-08-16 18:52:19,662 [INFO]    OneNote (Desktop)
+2026-08-16 18:52:19,662 [INFO]    NPI04402F (HP Color LaserJet MFP M283fdw)
+2026-08-16 18:52:19,662 [INFO]    Microsoft Print to PDF
+2026-08-16 18:52:19,680 [INFO] [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://localhost:8765
+2026-08-16 18:52:19,680 [INFO] [33mPress CTRL+C to quit[0m
+2026-08-16 18:53:07,387 [INFO] ==================================================
+2026-08-16 18:53:07,387 [INFO] 🚀 CajonPOS iniciando...
+2026-08-16 18:53:07,387 [INFO]    Tipo conexión:  usb
+2026-08-16 18:53:07,387 [INFO]    Impresora USB:  POS-80C
+2026-08-16 18:53:07,387 [INFO]    Servidor:       http://localhost:8765
+2026-08-16 18:53:07,387 [INFO]    Log:            D:\Obras\PosTienda\backend\CajonPOS\logs\cajon.log
+2026-08-16 18:53:07,387 [INFO] ==================================================
+2026-08-16 18:53:07,387 [INFO] Puertos COM disponibles:
+2026-08-16 18:53:07,387 [INFO]    COM3 — Serie estándar sobre el vínculo Bluetooth (COM3)
+2026-08-16 18:53:07,387 [INFO]    COM4 — Serie estándar sobre el vínculo Bluetooth (COM4)
+2026-08-16 18:53:07,387 [INFO] Impresoras instaladas en Windows:
+2026-08-16 18:53:07,387 [INFO]    POS-80C
+2026-08-16 18:53:07,387 [INFO]    OneNote (escritorio) - Impresora virtual protegida
+2026-08-16 18:53:07,387 [INFO]    OneNote (Desktop)
+2026-08-16 18:53:07,387 [INFO]    NPI04402F (HP Color LaserJet MFP M283fdw)
+2026-08-16 18:53:07,387 [INFO]    Microsoft Print to PDF
+2026-08-16 18:53:07,409 [INFO] [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://localhost:8765
+2026-08-16 18:53:07,409 [INFO] [33mPress CTRL+C to quit[0m
+2026-08-16 18:53:18,949 [INFO] 🏓 Ping recibido
+2026-08-16 18:53:18,950 [INFO] 127.0.0.1 - - [16/Aug/2026 18:53:18] "GET /ping HTTP/1.1" 200 -
+2026-08-16 18:54:44,005 [INFO] ==================================================
+2026-08-16 18:54:44,005 [INFO] 🚀 CajonPOS iniciando...
+2026-08-16 18:54:44,006 [INFO]    Tipo conexión:  usb
+2026-08-16 18:54:44,006 [INFO]    Impresora USB:  POS-80C
+2026-08-16 18:54:44,006 [INFO]    Servidor:       http://localhost:8765
+2026-08-16 18:54:44,006 [INFO]    Log:            D:\Obras\PosTienda\backend\CajonPOS\logs\cajon.log
+2026-08-16 18:54:44,006 [INFO] ==================================================
+2026-08-16 18:54:44,012 [INFO] Puertos COM disponibles:
+2026-08-16 18:54:44,013 [INFO]    COM3 — Serie estándar sobre el vínculo Bluetooth (COM3)
+2026-08-16 18:54:44,013 [INFO]    COM4 — Serie estándar sobre el vínculo Bluetooth (COM4)
+2026-08-16 18:54:44,014 [INFO] Impresoras instaladas en Windows:
+2026-08-16 18:54:44,014 [INFO]    POS-80C
+2026-08-16 18:54:44,014 [INFO]    OneNote (escritorio) - Impresora virtual protegida
+2026-08-16 18:54:44,014 [INFO]    OneNote (Desktop)
+2026-08-16 18:54:44,014 [INFO]    NPI04402F (HP Color LaserJet MFP M283fdw)
+2026-08-16 18:54:44,015 [INFO]    Microsoft Print to PDF
+2026-08-16 18:54:44,025 [INFO] [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://localhost:8765
+2026-08-16 18:54:44,025 [INFO] [33mPress CTRL+C to quit[0m
+2026-08-16 18:55:05,481 [INFO] 🏓 Ping recibido
+2026-08-16 18:55:05,481 [INFO] 127.0.0.1 - - [16/Aug/2026 18:55:05] "GET /ping HTTP/1.1" 200 -
+2026-08-16 18:56:37,249 [INFO] 🏓 Ping recibido
+2026-08-16 18:56:37,249 [INFO] 127.0.0.1 - - [16/Aug/2026 18:56:37] "GET /ping HTTP/1.1" 200 -
+2026-08-16 18:56:38,666 [INFO] 🏓 Ping recibido
+2026-08-16 18:56:38,666 [INFO] 127.0.0.1 - - [16/Aug/2026 18:56:38] "GET /ping HTTP/1.1" 200 -
+2026-08-16 18:56:39,752 [INFO] 🏓 Ping recibido
+2026-08-16 18:56:39,752 [INFO] 127.0.0.1 - - [16/Aug/2026 18:56:39] "GET /ping HTTP/1.1" 200 -
+2026-08-16 18:57:03,625 [INFO] 127.0.0.1 - - [16/Aug/2026 18:57:03] "[31m[1mPOST /ping HTTP/1.1[0m" 405 -
+2026-08-16 18:57:08,258 [INFO] 🏓 Ping recibido
+2026-08-16 18:57:08,258 [INFO] 127.0.0.1 - - [16/Aug/2026 18:57:08] "GET /ping HTTP/1.1" 200 -
+2026-08-16 18:57:23,547 [INFO] 🏓 Ping recibido
+2026-08-16 18:57:23,548 [INFO] 127.0.0.1 - - [16/Aug/2026 18:57:23] "GET /ping HTTP/1.1" 200 -
+2026-08-16 18:57:24,378 [INFO] 127.0.0.1 - - [16/Aug/2026 18:57:24] "[33mGET /favicon.ico HTTP/1.1[0m" 404 -
+2026-08-16 18:58:08,201 [INFO] 🏓 Ping recibido
+2026-08-16 18:58:08,202 [INFO] 127.0.0.1 - - [16/Aug/2026 18:58:08] "GET /ping?x=123 HTTP/1.1" 200 -
+2026-08-16 18:58:24,744 [INFO] 🏓 Ping recibido
+2026-08-16 18:58:24,744 [INFO] 127.0.0.1 - - [16/Aug/2026 18:58:24] "GET /ping HTTP/1.1" 200 -
+2026-08-16 18:58:24,999 [INFO] 127.0.0.1 - - [16/Aug/2026 18:58:24] "[33mGET /favicon.ico HTTP/1.1[0m" 404 -
+2026-08-16 19:00:06,103 [INFO] ==================================================
+2026-08-16 19:00:06,103 [INFO] 🚀 CajonPOS iniciando...
+2026-08-16 19:00:06,103 [INFO]    Tipo conexión:  usb
+2026-08-16 19:00:06,103 [INFO]    Impresora USB:  POS-80C
+2026-08-16 19:00:06,103 [INFO]    Servidor:       http://localhost:8765
+2026-08-16 19:00:06,103 [INFO]    Log:            D:\Obras\PosTienda\backend\CajonPOS\logs\cajon.log
+2026-08-16 19:00:06,103 [INFO] ==================================================
+2026-08-16 19:00:06,119 [INFO] Puertos COM disponibles:
+2026-08-16 19:00:06,119 [INFO]    COM3 — Serie estándar sobre el vínculo Bluetooth (COM3)
+2026-08-16 19:00:06,119 [INFO]    COM4 — Serie estándar sobre el vínculo Bluetooth (COM4)
+2026-08-16 19:00:06,119 [INFO] Impresoras instaladas en Windows:
+2026-08-16 19:00:06,119 [INFO]    POS-80C
+2026-08-16 19:00:06,119 [INFO]    OneNote (escritorio) - Impresora virtual protegida
+2026-08-16 19:00:06,119 [INFO]    OneNote (Desktop)
+2026-08-16 19:00:06,119 [INFO]    NPI04402F (HP Color LaserJet MFP M283fdw)
+2026-08-16 19:00:06,119 [INFO]    Microsoft Print to PDF
+2026-08-16 19:00:06,135 [INFO] [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://localhost:8765
+2026-08-16 19:00:06,135 [INFO] [33mPress CTRL+C to quit[0m
+2026-08-16 19:00:12,818 [INFO] 🏓 Ping recibido
+2026-08-16 19:00:12,818 [INFO] 127.0.0.1 - - [16/Aug/2026 19:00:12] "GET /ping HTTP/1.1" 200 -
+2026-08-16 19:00:37,775 [INFO] 127.0.0.1 - - [16/Aug/2026 19:00:37] "[31m[1mGET /abrir-cajon HTTP/1.1[0m" 405 -
+2026-08-16 19:00:48,966 [INFO] 📥 Solicitud recibida: /abrir-cajon
+2026-08-16 19:00:48,966 [INFO] Intentando abrir cajón (USB) — Impresora: POS-80C
+2026-08-16 19:00:49,101 [INFO] ✅ Cajón abierto correctamente — Impresora: POS-80C
+2026-08-16 19:00:49,102 [INFO] 127.0.0.1 - - [16/Aug/2026 19:00:49] "POST /abrir-cajon HTTP/1.1" 200 -
+2026-08-16 19:10:06,509 [INFO] ==================================================
+2026-08-16 19:10:06,509 [INFO] 🚀 CajonPOS iniciando...
+2026-08-16 19:10:06,509 [INFO]    Tipo conexión:  usb
+2026-08-16 19:10:06,509 [INFO]    Impresora USB:  None
+2026-08-16 19:10:06,509 [INFO]    Servidor:       http://localhost:8765
+2026-08-16 19:10:06,509 [INFO]    Log:            D:\Obras\PosTienda\backend\CajonPOS\logs\cajon.log
+2026-08-16 19:10:06,509 [INFO] ==================================================
+2026-08-16 19:10:06,525 [INFO] Puertos COM disponibles:
+2026-08-16 19:10:06,525 [INFO]    COM3 — Serie estándar sobre el vínculo Bluetooth (COM3)
+2026-08-16 19:10:06,525 [INFO]    COM4 — Serie estándar sobre el vínculo Bluetooth (COM4)
+2026-08-16 19:10:06,525 [INFO] Impresoras instaladas en Windows:
+2026-08-16 19:10:06,534 [INFO]    POS-80C
+2026-08-16 19:10:06,534 [INFO]    OneNote (escritorio) - Impresora virtual protegida
+2026-08-16 19:10:06,534 [INFO]    OneNote (Desktop)
+2026-08-16 19:10:06,534 [INFO]    NPI04402F (HP Color LaserJet MFP M283fdw)
+2026-08-16 19:10:06,534 [INFO]    Microsoft Print to PDF
+2026-08-16 19:10:06,541 [INFO] [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://localhost:8765
+2026-08-16 19:10:06,557 [INFO] [33mPress CTRL+C to quit[0m
+2026-08-16 19:10:19,708 [INFO] 📥 Solicitud recibida: /abrir-cajon
+2026-08-16 19:10:19,708 [INFO] Intentando abrir cajón (USB) — Impresora: POS-80C
+2026-08-16 19:10:19,799 [INFO] ✅ Cajón abierto correctamente — Impresora: POS-80C
+2026-08-16 19:10:19,802 [INFO] 127.0.0.1 - - [16/Aug/2026 19:10:19] "POST /abrir-cajon HTTP/1.1" 200 -
