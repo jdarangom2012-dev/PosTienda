@@ -18,6 +18,18 @@ from .models import FormaPago, Venta, VentaDetalle, VentaPago
 from productos.models import Producto
 from inventario.models import Inventario
 
+
+def es_fruver(producto):
+    """True si el producto pertenece a la categoría Fruver (precio variable, sin control de stock)."""
+    return (producto.categoria.nombre or '').strip().lower() == 'fruver'
+
+
+def precio_linea(producto, linea):
+    """Precio efectivo de una línea: el enviado por el cajero solo en Fruver."""
+    if es_fruver(producto) and linea.get('precio_unit') is not None:
+        return linea['precio_unit']
+    return producto.precio_venta
+
 class FormaPagoSerializer(serializers.ModelSerializer):
     class Meta:
         model  = FormaPago
@@ -85,6 +97,11 @@ class VentaDetalleWriteSerializer(serializers.Serializer):
         max_digits=12, decimal_places=2,
         required=False, default=Decimal('0.00')
     )
+    # Solo se respeta para productos de la categoría Fruver (precio diario variable)
+    precio_unit = serializers.DecimalField(
+        max_digits=12, decimal_places=2,
+        required=False, allow_null=True
+    )
 
     def validate_cantidad(self, value):
         if value <= 0:
@@ -135,11 +152,19 @@ class CrearVentaSerializer(serializers.Serializer):
         # Validar que los productos existen y tienen stock
         for linea in detalle:
             try:
-                producto = Producto.objects.get(id=linea['producto_id'], activo=True)
+                producto = Producto.objects.select_related('categoria').get(
+                    id=linea['producto_id'], activo=True)
             except Producto.DoesNotExist:
                 raise serializers.ValidationError(
                     {'detalle': f'Producto ID {linea["producto_id"]} no encontrado.'}
                 )
+
+            if es_fruver(producto):
+                if linea.get('precio_unit') is None or linea['precio_unit'] <= 0:
+                    raise serializers.ValidationError(
+                        {'detalle': f'Indica el precio de hoy para "{producto.nombre}".'}
+                    )
+                continue  # Fruver: sin control de stock
 
             try:
                 inv = Inventario.objects.get(producto=producto)
@@ -169,8 +194,8 @@ class CrearVentaSerializer(serializers.Serializer):
         # Calcular total de la venta
         total_venta = Decimal('0.00')
         for linea in detalle:
-            producto    = Producto.objects.get(id=linea['producto_id'])
-            precio_unit = producto.precio_venta
+            producto    = Producto.objects.select_related('categoria').get(id=linea['producto_id'])
+            precio_unit = precio_linea(producto, linea)
             subtotal    = (precio_unit * linea['cantidad']) - linea.get('descuento', Decimal('0.00'))
             total_venta += subtotal
 

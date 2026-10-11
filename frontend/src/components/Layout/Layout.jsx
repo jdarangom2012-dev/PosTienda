@@ -55,6 +55,7 @@ async function sincronizarVentasOffline() {
           producto_id: item.producto_id,
           cantidad:    item.cantidad,
           descuento:   item.descuento || 0,
+          precio_unit: item.precio_unit,
         })),
         pagos: [{
           forma_pago_id: venta.formaPagoId,

@@ -64,7 +64,7 @@ export default function POS() {
       if (existe) {
         return prev.map(i =>
           i.producto_id === producto.id
-            ? { ...i, cantidad: i.cantidad + 1 }
+            ? { ...i, cantidad: i.cantidad + 1, precio_unit: parseFloat(producto.precio_venta) }
             : i
         )
       }

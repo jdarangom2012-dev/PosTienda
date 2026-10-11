@@ -6,6 +6,7 @@ from rest_framework.decorators   import action
 from rest_framework.response     import Response
 from rest_framework.permissions  import IsAuthenticated
 from django.db.models            import Q, F
+from decimal                     import Decimal, InvalidOperation
 from .models      import Categoria, Producto
 from .serializers import (
     CategoriaSerializer, ProductoSerializer,
@@ -131,6 +132,58 @@ class ProductoViewSet(TiendaMixin, viewsets.ModelViewSet):
             )[:20]
 
         return Response(ProductoBusquedaSerializer(qs, many=True).data)
+
+    @action(detail=False, methods=['post'], url_path='crear-fruver')
+    def crear_fruver(self, request):
+        """Crea (o reutiliza) un producto en la categoría Fruver desde el POS."""
+        tienda = self.get_tienda()
+        nombre = (request.data.get('nombre') or '').strip()
+        try:
+            precio = Decimal(str(request.data.get('precio')))
+        except (InvalidOperation, TypeError):
+            precio = Decimal('0')
+        if len(nombre) < 2:
+            return Response({'error': 'Nombre inválido.'}, status=status.HTTP_400_BAD_REQUEST)
+        if precio <= 0:
+            return Response({'error': 'El precio debe ser mayor a 0.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        categoria = Categoria.objects.filter(tienda=tienda, nombre__iexact='fruver').first()
+        if not categoria:
+            return Response({'error': 'No existe la categoría "Fruver".'},
+                            status=status.HTTP_400_BAD_REQUEST)
+
+        producto = Producto.objects.filter(
+            tienda=tienda, categoria=categoria, nombre__iexact=nombre).first()
+        if producto:
+            if not producto.activo:
+                producto.activo = True
+            producto.precio_venta = precio
+            producto.save()
+        else:
+            codigos = Producto.objects.filter(
+                tienda=tienda, codigo_barras__startswith='INT-'
+            ).values_list('codigo_barras', flat=True)
+            max_num = 0
+            for cod in codigos:
+                try:
+                    max_num = max(max_num, int(cod.replace('INT-', '')))
+                except ValueError:
+                    pass
+            producto = Producto.objects.create(
+                tienda=tienda, categoria=categoria, nombre=nombre,
+                codigo_barras=f'INT-{max_num + 1:04d}',
+                precio_costo=Decimal('0'), precio_venta=precio,
+                unidad_medida='UNIDAD',
+            )
+            Inventario.objects.get_or_create(
+                producto=producto, defaults={'cantidad_actual': 0, 'tienda': tienda})
+            registrar_auditoria(
+                request, 'INSERT', tabla='productos', registro_id=producto.id,
+                valor_nuevo={'nombre': producto.nombre, 'precio_venta': str(precio)},
+                detalle=f'Producto Fruver creado desde POS: {producto.nombre}',
+            )
+        return Response(ProductoBusquedaSerializer(producto).data,
+                        status=status.HTTP_201_CREATED)
 
     @action(detail=False, methods=['get'], url_path='bajo-minimo')
     def bajo_minimo(self, request):

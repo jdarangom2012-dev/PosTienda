@@ -105,6 +105,7 @@ export const productosService = {
   buscarCodigo: (cod)    => api.get('/productos/buscar/',       { params: { q: cod } }),
   detalle:      (id)     => api.get(`/productos/${id}/`),
   crear:        (data)   => api.post('/productos/',              data),
+  crearFruver:  (nombre, precio) => api.post('/productos/crear-fruver/', { nombre, precio }),
   actualizar:   (id, d)  => api.patch(`/productos/${id}/`,      d),
   eliminar:     (id)     => api.patch(`/productos/${id}/`,      { activo: false }),
   categorias:   ()       => api.get('/productos/categorias/'),
@@ -130,6 +131,7 @@ export const ventasService = {
   resumenSemana: ()       => api.get('/ventas/historial/resumen-semana/'),
   formasPago:    ()       => api.get('/ventas/formas-pago/activas/'),
   resumenPeriodo: (params) => api.get('/ventas/historial/resumen-periodo/', { params }),
+  ventasPorCategoria: (params) => api.get('/ventas/historial/ventas-por-categoria/', { params }),
   ventasPorProducto: (params) => api.get('/ventas/historial/ventas-por-producto/', { params }), // ← ¿está esta línea?
 }
 

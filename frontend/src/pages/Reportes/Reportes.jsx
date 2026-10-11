@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, Fragment } from 'react'
 import { iaService, ventasService, inventarioService, productosService, creditosService } from '../../services/api'
 import GraficaVentas from './components/GraficaVentas'
 
@@ -892,6 +892,175 @@ function TabVentasPorProducto() {
   )
 }
 
+// ── Ventas por categoría ─────────────────────────────────────
+function TabVentasPorCategoria() {
+  const fmt = (v) => `$${parseFloat(v || 0).toLocaleString('es-CO')}`
+  const hoy = new Date().toISOString().slice(0, 10)
+
+  const [fechaDesde, setFechaDesde] = useState(hoy)
+  const [fechaHasta, setFechaHasta] = useState(hoy)
+  const [datos,      setDatos]      = useState(null)
+  const [loading,    setLoading]    = useState(false)
+  const [abiertas,   setAbiertas]   = useState({})
+
+  const buscar = useCallback(async () => {
+    if (!fechaDesde || !fechaHasta) return
+    setLoading(true)
+    try {
+      const { data } = await ventasService.ventasPorCategoria({ fecha_desde: fechaDesde, fecha_hasta: fechaHasta })
+      setDatos(data)
+      setAbiertas({})
+    } catch (err) { console.error(err) }
+    finally { setLoading(false) }
+  }, [fechaDesde, fechaHasta])
+
+  useEffect(() => { buscar() }, [buscar])
+
+  const exportarExcel = () => {
+    if (!datos?.categorias?.length) return
+    const headers = ['Categoría', 'Fecha', 'Venta', 'Producto', 'Cantidad', 'Valor', 'Forma de pago']
+    const rows = datos.categorias.flatMap(c =>
+      c.lineas.map(l => [
+        c.categoria,
+        new Date(l.fecha_hora).toLocaleDateString('es-CO', { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit' }),
+        `#${l.venta_id}`, l.producto_nombre, l.cantidad, l.valor, l.forma_pago,
+      ])
+    )
+    const csv = [headers, ...rows]
+      .map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(','))
+      .join('\n')
+    const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' })
+    const a = document.createElement('a')
+    a.href = URL.createObjectURL(blob)
+    a.download = `ventas_por_categoria_${fechaDesde}_${fechaHasta}.csv`
+    a.click()
+  }
+
+  const cats = datos?.categorias || []
+
+  return (
+    <div className="glass rounded-2xl p-5 space-y-4">
+      <h3 className="text-base font-bold text-white" style={{ fontFamily: 'Syne, sans-serif' }}>
+        🗂️ Ventas por categoría
+      </h3>
+
+      <div className="flex flex-wrap gap-3 items-end">
+        <div>
+          <p className="text-xs mb-1" style={{ color: 'rgba(196,181,253,0.4)' }}>Desde</p>
+          <input type="date" value={fechaDesde} onChange={e => setFechaDesde(e.target.value)}
+                 className="input-pos px-3 py-2.5 rounded-xl text-sm" />
+        </div>
+        <div>
+          <p className="text-xs mb-1" style={{ color: 'rgba(196,181,253,0.4)' }}>Hasta</p>
+          <input type="date" value={fechaHasta} onChange={e => setFechaHasta(e.target.value)}
+                 className="input-pos px-3 py-2.5 rounded-xl text-sm" />
+        </div>
+        <button onClick={buscar} disabled={loading}
+                className="btn-primary px-5 py-2.5 rounded-xl text-sm font-bold text-white disabled:opacity-50">
+          {loading ? 'Consultando...' : '🔍 Consultar'}
+        </button>
+        {cats.length > 0 && (
+          <button onClick={exportarExcel}
+                  className="px-5 py-2.5 rounded-xl text-sm font-bold"
+                  style={{ background: 'rgba(74,222,128,0.1)', color: '#4ade80', border: '1px solid rgba(74,222,128,0.2)' }}>
+            📥 Exportar Excel
+          </button>
+        )}
+      </div>
+
+      {datos && (
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+          {[
+            { label: 'Categorías',       value: datos.total_categorias, color: '#8b5cf6' },
+            { label: 'Unidades totales', value: parseFloat(datos.total_cantidad).toLocaleString('es-CO'), color: '#06b6d4' },
+            { label: 'Valor total',      value: fmt(datos.total_valor), color: '#4ade80' },
+          ].map(c => (
+            <div key={c.label} className="rounded-xl p-3"
+                 style={{ background: 'rgba(139,92,246,0.06)', border: '1px solid rgba(139,92,246,0.12)' }}>
+              <p className="text-xs mb-1" style={{ color: 'rgba(196,181,253,0.4)' }}>{c.label}</p>
+              <p className="text-lg font-black" style={{ color: c.color, fontFamily: 'Syne, sans-serif' }}>{c.value}</p>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {loading ? (
+        <div className="flex justify-center py-8">
+          <div className="w-8 h-8 rounded-full border-2 border-purple-500 border-t-transparent animate-spin" />
+        </div>
+      ) : cats.length > 0 ? (
+        <div className="overflow-x-auto rounded-xl" style={{ border: '1px solid rgba(139,92,246,0.12)' }}>
+          <table className="w-full">
+            <thead>
+              <tr style={{ borderBottom: '1px solid rgba(139,92,246,0.15)' }}>
+                {['Categoría', 'Cantidad', 'Valor', '% del total'].map(h => (
+                  <th key={h} className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider"
+                      style={{ color: 'rgba(196,181,253,0.4)' }}>{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {cats.map(c => (
+                <Fragment key={c.categoria_id}>
+                  <tr
+                      onClick={() => setAbiertas(a => ({ ...a, [c.categoria_id]: !a[c.categoria_id] }))}
+                      className="cursor-pointer hover:bg-purple-900/20"
+                      style={{ borderBottom: '1px solid rgba(139,92,246,0.07)' }}>
+                    <td className="px-4 py-2.5 text-sm text-white font-semibold">
+                      {abiertas[c.categoria_id] ? '▾' : '▸'} {c.categoria}
+                    </td>
+                    <td className="px-4 py-2.5 text-sm font-bold" style={{ color: '#a78bfa' }}>
+                      {c.cantidad.toLocaleString('es-CO')}
+                    </td>
+                    <td className="px-4 py-2.5 text-sm font-bold" style={{ color: '#4ade80' }}>{fmt(c.valor)}</td>
+                    <td className="px-4 py-2.5 text-xs" style={{ color: 'rgba(196,181,253,0.6)' }}>{c.porcentaje}%</td>
+                  </tr>
+                  {abiertas[c.categoria_id] && (
+                    <>
+                      <tr style={{ background: 'rgba(139,92,246,0.08)' }}>
+                        {['Fecha · Venta', 'Cantidad', 'Valor', 'Pago'].map(h => (
+                          <td key={h} className="px-4 py-1.5 text-[10px] font-bold uppercase tracking-wider"
+                              style={{ color: 'rgba(196,181,253,0.4)' }}>{h}</td>
+                        ))}
+                      </tr>
+                      {c.lineas.map((l, i) => (
+                        <tr key={`${c.categoria_id}-${l.venta_id}-${i}`}
+                            style={{ background: 'rgba(139,92,246,0.04)', borderBottom: '1px solid rgba(139,92,246,0.05)' }}>
+                          <td className="px-4 py-2 pl-10 text-xs text-white/80">
+                            <span style={{ color: 'rgba(196,181,253,0.5)' }}>
+                              {new Date(l.fecha_hora).toLocaleDateString('es-CO', { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit' })}
+                            </span>
+                            {' · '}#{l.venta_id}{' · '}{l.producto_nombre}
+                          </td>
+                          <td className="px-4 py-2 text-xs" style={{ color: '#a78bfa' }}>{l.cantidad.toLocaleString('es-CO')}</td>
+                          <td className="px-4 py-2 text-xs" style={{ color: '#4ade80' }}>{fmt(l.valor)}</td>
+                          <td className="px-4 py-2 text-xs">
+                            <span className="px-2 py-0.5 rounded-lg font-bold"
+                                  style={/cr[eé]dito/i.test(l.forma_pago)
+                                    ? { background: 'rgba(251,191,36,0.12)', color: '#fbbf24' }
+                                    : { background: 'rgba(74,222,128,0.1)',  color: '#4ade80' }}>
+                              {l.forma_pago}
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                    </>
+                  )}
+                </Fragment>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      ) : (
+        <div className="flex flex-col items-center justify-center py-8 gap-2">
+          <p className="text-2xl">🗂️</p>
+          <p className="text-sm text-white">Sin ventas en este período</p>
+        </div>
+      )}
+    </div>
+  )
+}
+
 // ── Tab Consultas ────────────────────────────────────────────
 function TabConsultas() {
   const fmt = (v) => `$${parseFloat(v || 0).toLocaleString('es-CO')}`
@@ -1096,6 +1265,8 @@ function TabConsultas() {
       </div>
       {/* ── VENTAS POR PRODUCTO ── */}
       <TabVentasPorProducto />
+      {/* ── VENTAS POR CATEGORÍA ── */}
+      <TabVentasPorCategoria />
       {/* ── INVENTARIO EN FECHA ── */}
       <div className="glass rounded-2xl p-5 space-y-4">
         <h3 className="text-base font-bold text-white" style={{ fontFamily: 'Syne, sans-serif' }}>

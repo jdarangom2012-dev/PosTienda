@@ -8,6 +8,7 @@ export default function BuscadorProducto({ onAgregar, inputRef: externalRef }) {
   const [mostrar,        setMostrar]        = useState(false)
   const [productosCache, setProductosCache] = useState([])
   const [isOnline,       setIsOnline]       = useState(navigator.onLine)
+  const [fruver,         setFruver]         = useState(null)   // { producto?, nombre, precio, error }
   const internalRef = useRef(null)
   const timerRef    = useRef(null)
   const inputRef    = externalRef || internalRef
@@ -45,7 +46,31 @@ export default function BuscadorProducto({ onAgregar, inputRef: externalRef }) {
   }, [])
 
   // ── Seleccionar producto ─────────────────────────────────
+  const esFruver = (p) => (p.categoria_nombre || '').trim().toLowerCase() === 'fruver'
+
+  const confirmarFruver = async () => {
+    const precio = parseFloat(String(fruver.precio).replace(/[^\d.]/g, ''))
+    if (!precio || precio <= 0) { setFruver(f => ({ ...f, error: 'Ingresa el precio de hoy' })); return }
+    try {
+      let producto = fruver.producto
+      if (!producto) {
+        const { data } = await productosService.crearFruver(fruver.nombre, precio)
+        producto = data
+      }
+      onAgregar({ ...producto, precio_venta: precio })
+      setFruver(null); setQuery(''); setResultados([]); setMostrar(false)
+      inputRef.current?.focus()
+    } catch (e) {
+      setFruver(f => ({ ...f, error: e.response?.data?.error || 'No se pudo crear el producto' }))
+    }
+  }
+
   const seleccionar = (producto) => {
+    if (esFruver(producto)) {
+      setFruver({ producto, nombre: producto.nombre, precio: String(parseInt(producto.precio_venta) || ''), error: '' })
+      setMostrar(false)
+      return
+    }
     onAgregar(producto)
     setQuery('')
     setResultados([])
@@ -162,15 +187,58 @@ export default function BuscadorProducto({ onAgregar, inputRef: externalRef }) {
               </div>
             </button>
           ))}
+          {isOnline && query.trim().length >= 2 && (
+            <button
+              onClick={() => { setFruver({ nombre: query.trim(), precio: '', error: '' }); setMostrar(false) }}
+              className="w-full flex items-center gap-3 px-4 py-3 text-left font-bold text-sm hover:bg-green-900/30"
+              style={{ color: '#86efac', borderTop: '1px solid rgba(34,197,94,0.3)' }}>
+              🥬 Crear "{query.trim()}" en Fruver (precio de hoy)
+            </button>
+          )}
         </div>
       )}
 
-      {mostrar && resultados.length === 0 && !buscando && (
+      {mostrar && resultados.length === 0 && !buscando && !fruver && (
         <div className="absolute top-full left-0 right-0 mt-2 rounded-2xl px-4 py-6 text-center z-[9999]"
              style={{ background: '#1a0a2e', border: '1px solid rgba(139,92,246,0.2)' }}>
           <p className="text-sm" style={{ color: 'rgba(196,181,253,0.5)' }}>
             No se encontraron productos
           </p>
+          {isOnline && query.trim().length >= 2 && (
+            <button
+              onClick={() => { setFruver({ nombre: query.trim(), precio: '', error: '' }); setMostrar(false) }}
+              className="mt-3 px-4 py-2 rounded-xl text-sm font-bold text-white"
+              style={{ background: 'linear-gradient(135deg, #16a34a, #22c55e)' }}>
+              🥬 Crear "{query.trim()}" en Fruver
+            </button>
+          )}
+        </div>
+      )}
+
+      {fruver && (
+        <div className="absolute top-full left-0 right-0 mt-2 rounded-2xl p-4 z-[9999]"
+             style={{ background: '#1a0a2e', border: '1px solid rgba(34,197,94,0.4)', boxShadow: '0 20px 60px rgba(0,0,0,0.5)' }}>
+          <p className="text-sm font-bold text-white mb-2">🥬 {fruver.nombre} <span style={{ color: '#86efac' }}>(Fruver)</span></p>
+          <div className="flex gap-2">
+            <input
+              autoFocus
+              type="number"
+              inputMode="numeric"
+              value={fruver.precio}
+              onChange={e => setFruver(f => ({ ...f, precio: e.target.value, error: '' }))}
+              onKeyDown={e => { if (e.key === 'Enter') confirmarFruver(); if (e.key === 'Escape') setFruver(null) }}
+              placeholder="Precio de hoy"
+              className="input-pos flex-1 px-3 py-2 rounded-xl text-sm"
+            />
+            <button onClick={confirmarFruver}
+                    className="px-4 py-2 rounded-xl text-sm font-bold text-white"
+                    style={{ background: 'linear-gradient(135deg, #16a34a, #22c55e)' }}>
+              Agregar
+            </button>
+            <button onClick={() => { setFruver(null); inputRef.current?.focus() }}
+                    className="px-3 py-2 rounded-xl text-sm" style={{ color: '#f87171' }}>✕</button>
+          </div>
+          {fruver.error && <p className="text-xs mt-2" style={{ color: '#f87171' }}>{fruver.error}</p>}
         </div>
       )}
     </div>

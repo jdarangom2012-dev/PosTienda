@@ -1,6 +1,8 @@
 // ============================================================
 // 4. src/pages/POS/components/TicketVenta.jsx
 // ============================================================
+import { construirRecibo, imprimirRecibo } from '../../../utils/recibo'
+
 export default function TicketVenta({ venta, cambio, onNuevaVenta }) {
   if (!venta) return null
 
@@ -70,6 +72,14 @@ export default function TicketVenta({ venta, cambio, onNuevaVenta }) {
             </div>
           )}
         </div>
+
+        {/* Imprimir recibo (si el cliente lo pide después) */}
+        <button
+          onClick={() => imprimirRecibo(construirRecibo(venta, cambio))}
+          className="w-full py-3 rounded-xl font-bold text-sm mb-3"
+          style={{ background: 'rgba(139,92,246,0.12)', color: '#c4b5fd', border: '1px solid rgba(139,92,246,0.25)' }}>
+          🖨️ Imprimir recibo
+        </button>
 
         {/* Botón nueva venta */}
         <button

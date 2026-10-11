@@ -8,9 +8,12 @@ import os
 import serial
 import serial.tools.list_ports
 from datetime import datetime
-from flask import Flask, jsonify
+from flask import Flask, jsonify, request
 from flask_cors import CORS
 import sys
+import tempfile
+import subprocess
+import time
 
 try:
     import win32print
@@ -20,10 +23,8 @@ except ImportError:
 
 # ── Cargar configuración ─────────────────────────────────────
 if getattr(sys, 'frozen', False):
-    # Corriendo como .exe
     BASE_DIR = os.path.dirname(sys.executable)
 else:
-    # Corriendo como script Python
     BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 CONFIG_PATH = os.path.join(BASE_DIR, 'config.json')
@@ -49,16 +50,14 @@ log = logging.getLogger(__name__)
 app = Flask(__name__)
 CORS(app)
 
-# ── Comando ESC/POS para abrir cajón ─────────────────────────
-COMANDO_CAJON = b'\x1B\x70\x00\x19\xFA'
+# ── Comando ESC/POS para abrir cajón (usado en modo serial) ──
+COMANDO_CAJON = b'\x1B\x70\x01\x19\xFA'
 
 def listar_puertos():
-    """Lista todos los puertos COM disponibles."""
     puertos = serial.tools.list_ports.comports()
     return [{'puerto': p.device, 'descripcion': p.description} for p in puertos]
 
 def listar_impresoras():
-    """Lista todas las impresoras instaladas en Windows (para USB)."""
     if not WIN32PRINT_DISPONIBLE:
         return []
     impresoras = win32print.EnumPrinters(win32print.PRINTER_ENUM_LOCAL | win32print.PRINTER_ENUM_CONNECTIONS)
@@ -84,35 +83,102 @@ def abrir_cajon_serial():
         log.error(f"❌ Error inesperado — {str(e)}")
         return False, str(e)
 
+def abrir_cajon_raw(nombre_impresora_raw):
+    """Abre el cajón enviando el comando ESC/POS directo a una impresora que use el
+    driver 'Generic / Text Only' (deja pasar los bytes RAW). No gasta papel."""
+    log.info(f"Intentando abrir cajón (RAW) — Impresora: {nombre_impresora_raw}")
+    try:
+        h = win32print.OpenPrinter(nombre_impresora_raw)
+        try:
+            win32print.StartDocPrinter(h, 1, ("Apertura cajon", None, "RAW"))
+            win32print.StartPagePrinter(h)
+            win32print.WritePrinter(h, COMANDO_CAJON)
+            win32print.EndPagePrinter(h)
+            win32print.EndDocPrinter(h)
+        finally:
+            win32print.ClosePrinter(h)
+        log.info("✅ Cajón abierto vía RAW (sin papel)")
+        return True, f"Cajón abierto (RAW) en {nombre_impresora_raw}"
+    except Exception as e:
+        log.error(f"❌ Error RAW — {str(e)}")
+        return False, str(e)
+
 def abrir_cajon_usb():
-    """Envía el comando ESC/POS a través del spooler de Windows (impresora USB, ej. POS-80C)."""
+    """Usa Notepad para imprimir un archivo real, cambiando temporalmente
+    la impresora predeterminada a la del cajón. Esto replica el mismo
+    camino que usa 'Página de prueba' de Windows, que sí activa el kick
+    del cajón en este driver 3nStar (config 'Cash Drawer #1 Before
+    Printing' en Propiedades de impresora → Configuración del dispositivo)."""
     if not WIN32PRINT_DISPONIBLE:
         msg = "pywin32 no está instalado — no se puede usar modo USB"
         log.error(f"❌ {msg}")
         return False, msg
 
+    # Si hay impresora RAW configurada, se usa primero (sin papel); si falla, cae a Notepad
+    nombre_raw = config.get('impresora_raw')
+    if nombre_raw:
+        ok, msg = abrir_cajon_raw(nombre_raw)
+        if ok:
+            return ok, msg
+        log.warning("RAW falló — usando método Notepad como respaldo")
+
     nombre_impresora = config.get('nombre_impresora', 'POS-80C')
-    log.info(f"Intentando abrir cajón (USB) — Impresora: {nombre_impresora}")
+    log.info(f"Intentando abrir cajón (Notepad print) — Impresora: {nombre_impresora}")
 
-    h_printer = None
+    impresora_original = win32print.GetDefaultPrinter()
+
     try:
-        h_printer = win32print.OpenPrinter(nombre_impresora)
-        h_job = win32print.StartDocPrinter(h_printer, 1, ("AbrirCajon", None, "RAW"))
-        try:
-            win32print.StartPagePrinter(h_printer)
-            win32print.WritePrinter(h_printer, COMANDO_CAJON)
-            win32print.EndPagePrinter(h_printer)
-        finally:
-            win32print.EndDocPrinter(h_printer)
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.txt', delete=False, encoding='utf-8') as f:
+            # Texto configurable en config.json ("texto_apertura") para gastar menos papel
+            f.write(config.get('texto_apertura', "Apertura de cajon\n\n\n"))
+            ruta_temp = f.name
 
-        log.info(f"✅ Cajón abierto correctamente — Impresora: {nombre_impresora}")
+        win32print.SetDefaultPrinter(nombre_impresora)
+        time.sleep(0.3)
+
+        subprocess.run(
+            ["notepad.exe", "/p", ruta_temp],
+            timeout=10,
+        )
+
+        log.info(f"✅ Comando enviado vía Notepad — Impresora: {nombre_impresora}")
         return True, f"Cajón abierto en {nombre_impresora}"
     except Exception as e:
-        log.error(f"❌ Error al abrir cajón USB — Impresora: {nombre_impresora} | Error: {str(e)}")
+        log.error(f"❌ Error al abrir cajón — Impresora: {nombre_impresora} | Error: {str(e)}")
         return False, str(e)
     finally:
-        if h_printer:
-            win32print.ClosePrinter(h_printer)
+        try:
+            win32print.SetDefaultPrinter(impresora_original)
+        except Exception:
+            pass
+
+def imprimir_recibo(texto):
+    """Imprime un recibo de texto por el mismo camino (Notepad /p) que la apertura
+    del cajón. El driver abre el cajón antes de imprimir, así que una sola
+    impresión hace las dos cosas."""
+    if not WIN32PRINT_DISPONIBLE:
+        return False, "pywin32 no está instalado — no se puede imprimir"
+
+    nombre_impresora = config.get('nombre_impresora', 'POS-80C')
+    log.info(f"Imprimiendo recibo — Impresora: {nombre_impresora}")
+    impresora_original = win32print.GetDefaultPrinter()
+    try:
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.txt', delete=False, encoding='utf-8') as f:
+            f.write(texto)
+            ruta_temp = f.name
+        win32print.SetDefaultPrinter(nombre_impresora)
+        time.sleep(0.3)
+        subprocess.run(["notepad.exe", "/p", ruta_temp], timeout=15)
+        log.info("✅ Recibo enviado a impresión")
+        return True, "Recibo impreso"
+    except Exception as e:
+        log.error(f"❌ Error al imprimir recibo — {str(e)}")
+        return False, str(e)
+    finally:
+        try:
+            win32print.SetDefaultPrinter(impresora_original)
+        except Exception:
+            pass
 
 def abrir_cajon():
     """Enruta al método correcto (usb o serial) según config.json."""
@@ -133,23 +199,32 @@ def endpoint_abrir_cajon():
     else:
         return jsonify({'ok': False, 'error': mensaje}),   500
 
+@app.route('/imprimir-recibo', methods=['POST'])
+def endpoint_imprimir_recibo():
+    log.info("📥 Solicitud recibida: /imprimir-recibo")
+    datos = request.get_json(silent=True) or {}
+    texto = datos.get('texto', '')
+    if not texto.strip():
+        return jsonify({'ok': False, 'error': 'texto vacío'}), 400
+    exito, mensaje = imprimir_recibo(texto)
+    if exito:
+        return jsonify({'ok': True,  'mensaje': mensaje}), 200
+    return jsonify({'ok': False, 'error': mensaje}), 500
+
 @app.route('/puertos', methods=['GET'])
 def endpoint_puertos():
-    """Lista los puertos COM disponibles — útil para configuración."""
     puertos = listar_puertos()
     log.info(f"📋 Puertos disponibles consultados: {[p['puerto'] for p in puertos]}")
     return jsonify({'puertos': puertos}), 200
 
 @app.route('/impresoras', methods=['GET'])
 def endpoint_impresoras():
-    """Lista las impresoras instaladas en Windows — útil para configurar modo USB."""
     impresoras = listar_impresoras()
     log.info(f"🖨️ Impresoras disponibles consultadas: {[i['nombre'] for i in impresoras]}")
     return jsonify({'impresoras': impresoras}), 200
 
 @app.route('/ping', methods=['GET'])
 def endpoint_ping():
-    """Verifica que el servidor esté corriendo."""
     log.info("🏓 Ping recibido")
     return jsonify({
         'ok':      True,
@@ -179,7 +254,6 @@ if __name__ == '__main__':
     log.info(f"   Log:            {log_ruta}")
     log.info("=" * 50)
 
-    # Listar puertos COM disponibles al iniciar (informativo)
     puertos = listar_puertos()
     if puertos:
         log.info("Puertos COM disponibles:")
@@ -188,7 +262,6 @@ if __name__ == '__main__':
     else:
         log.info("No se encontraron puertos COM (normal si el cajón es USB)")
 
-    # Listar impresoras disponibles al iniciar (informativo)
     if WIN32PRINT_DISPONIBLE:
         impresoras = listar_impresoras()
         if impresoras:

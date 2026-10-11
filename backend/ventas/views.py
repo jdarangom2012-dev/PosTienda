@@ -20,6 +20,8 @@ from .serializers                import (
     FormaPagoSerializer,
     VentaReadSerializer,
     CrearVentaSerializer,
+    es_fruver,
+    precio_linea,
     CancelarVentaSerializer,
 )
 from usuarios.mixins import TiendaMixin
@@ -354,6 +356,69 @@ class VentaViewSet(TiendaMixin, viewsets.ReadOnlyModelViewSet):
             'ventas':          filas,
         })
 
+    @action(detail=False, methods=['get'], url_path='ventas-por-categoria')
+    def ventas_por_categoria(self, request):
+        fecha_desde  = request.query_params.get('fecha_desde')
+        fecha_hasta  = request.query_params.get('fecha_hasta')
+        categoria_id = request.query_params.get('categoria_id')  # opcional
+        tienda       = self.get_tienda()
+
+        if not fecha_desde or not fecha_hasta:
+            return Response({'error': 'Debes enviar fecha_desde y fecha_hasta.'}, status=400)
+
+        detalle_filter = {
+            'venta__fecha_hora__date__gte': fecha_desde,
+            'venta__fecha_hora__date__lte': fecha_hasta,
+            'venta__estado': 'COMPLETADA',
+        }
+        if tienda:
+            detalle_filter['venta__tienda'] = tienda
+        if categoria_id:
+            detalle_filter['producto__categoria_id'] = categoria_id
+
+        lineas = (VentaDetalle.objects.filter(**detalle_filter)
+                  .select_related('producto__categoria', 'venta')
+                  .prefetch_related('venta__pagos__forma_pago')
+                  .order_by('producto__categoria__nombre', 'venta__fecha_hora'))
+
+        categorias = {}
+        for d in lineas:
+            cat = d.producto.categoria
+            c = categorias.setdefault(cat.id, {
+                'categoria_id': cat.id,
+                'categoria':    cat.nombre,
+                'cantidad':     0.0,
+                'valor':        0.0,
+                'lineas':       [],
+            })
+            cant, val = float(d.cantidad), float(d.subtotal)
+            c['cantidad'] += cant
+            c['valor']    += val
+            formas = sorted({p.forma_pago.nombre for p in d.venta.pagos.all()})
+            c['lineas'].append({
+                'venta_id':        d.venta.id,
+                'fecha_hora':      str(d.venta.fecha_hora),
+                'producto_nombre': d.producto.nombre,
+                'cantidad':        cant,
+                'valor':           val,
+                'forma_pago':      ', '.join(formas),
+            })
+
+        lista = sorted(categorias.values(), key=lambda c: -c['valor'])
+        total_valor    = sum(c['valor'] for c in lista)
+        total_cantidad = sum(c['cantidad'] for c in lista)
+        for c in lista:
+            c['porcentaje'] = round(c['valor'] / total_valor * 100, 1) if total_valor else 0
+
+        return Response({
+            'desde':           fecha_desde,
+            'hasta':           fecha_hasta,
+            'total_categorias': len(lista),
+            'total_cantidad':  total_cantidad,
+            'total_valor':     total_valor,
+            'categorias':      lista,
+        })
+
 class ProcesarVentaView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -382,8 +447,9 @@ class ProcesarVentaView(APIView):
         descuento_total = Decimal('0.00')
 
         for linea in detalle:
-            producto    = Producto.objects.select_for_update().get(id=linea['producto_id'])
-            precio_unit = producto.precio_venta
+            producto    = Producto.objects.select_for_update().select_related('categoria').get(id=linea['producto_id'])
+            fruver      = es_fruver(producto)
+            precio_unit = precio_linea(producto, linea)
             descuento   = linea.get('descuento', Decimal('0.00'))
             cantidad    = linea['cantidad']
             subtotal    = (precio_unit * cantidad) - descuento
@@ -399,6 +465,9 @@ class ProcesarVentaView(APIView):
 
             subtotal_total  += precio_unit * cantidad
             descuento_total += descuento
+
+            if fruver:
+                continue  # Fruver no maneja stock
 
             inventario     = Inventario.objects.select_for_update().get(
                 producto=producto, tienda=tienda
@@ -525,6 +594,8 @@ class CancelarVentaView(APIView):
         usuario_obj = Usuario.objects.get(pk=request.user.pk)
 
         for linea in venta.detalle.all():
+            if es_fruver(linea.producto):
+                continue  # Fruver no maneja stock
             inventario     = Inventario.objects.select_for_update().get(
                 producto=linea.producto, tienda=tienda
             )

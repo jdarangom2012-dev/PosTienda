@@ -126,11 +126,12 @@ class ProductoBusquedaSerializer(serializers.ModelSerializer):
     Solo los datos que necesita la pantalla de caja.
     """
     stock_actual = serializers.SerializerMethodField()
+    categoria_nombre = serializers.CharField(source='categoria.nombre', read_only=True)
 
     class Meta:
         model  = Producto
         fields = (
-            'id', 'codigo_barras', 'nombre',
+            'id', 'codigo_barras', 'nombre', 'categoria_nombre',
             'precio_venta', 'unidad_medida',
             'imagen_url', 'stock_actual'
         )

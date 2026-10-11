@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { ventasService, creditosService, clientesService } from '../../../services/api'
+import { construirRecibo, imprimirRecibo, abrirCajonLocal } from '../../../utils/recibo'
 
 export default function ModalPago({ total, carrito, onExito, onCerrar }) {
   const [formasPago,       setFormasPago]       = useState([])
@@ -114,6 +115,24 @@ export default function ModalPago({ total, carrito, onExito, onCerrar }) {
     setClientesSugeridos([])
   }
 
+  // ── Imprimir recibo (opcional) / abrir cajón ──────────────
+  const [imprimir, setImprimir] = useState(() => {
+    try { return localStorage.getItem('pos_imprimir_recibo') === '1' } catch { return false }
+  })
+  const toggleImprimir = (v) => {
+    setImprimir(v)
+    try { localStorage.setItem('pos_imprimir_recibo', v ? '1' : '0') } catch {}
+  }
+
+  // Si se imprime, el driver ya abre el cajón; si no, se abre aparte (solo efectivo).
+  const postVenta = async (ventaObj, cambioV) => {
+    if (imprimir) {
+      await imprimirRecibo(construirRecibo(ventaObj, cambioV))
+    } else if (esEfectivo) {
+      await abrirCajonLocal()
+    }
+  }
+
   const procesar = async () => {
     if (!valido) return
     setProcesando(true)
@@ -123,18 +142,7 @@ export default function ModalPago({ total, carrito, onExito, onCerrar }) {
     if (!navigator.onLine) {
       const ventaOffline = guardarVentaOffline()
       // Simular respuesta exitosa para el ticket
-       // El cajón es tráfico 100% local (localhost) — abre igual aunque no haya internet
-      if (esEfectivo) {
-        try {
-          await fetch('http://localhost:8765/abrir-cajon', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-          })
-        } catch {
-          console.warn('CajonPOS no disponible')
-        }
-      }
-      onExito({
+       const dataOffline = {
         venta: {
           id:         ventaOffline.id,
           fecha_hora: ventaOffline.fecha,
@@ -154,7 +162,9 @@ export default function ModalPago({ total, carrito, onExito, onCerrar }) {
             monto:             total.toString(),
           }],
         }
-      }, cambio)
+      }
+      await postVenta(dataOffline.venta, cambio)
+      onExito(dataOffline, cambio)
       setProcesando(false)
       return
     }
@@ -166,6 +176,7 @@ export default function ModalPago({ total, carrito, onExito, onCerrar }) {
             producto_id: item.producto_id,
             cantidad:    item.cantidad,
             descuento:   item.descuento || 0,
+            precio_unit: item.precio_unit,
           })),
           pagos: [{
             forma_pago_id: 4,   // FormaPago "Crédito" — siempre ID=4
@@ -182,6 +193,7 @@ export default function ModalPago({ total, carrito, onExito, onCerrar }) {
         venta_id: ventaData.venta.id,
         notas: `Venta #${ventaData.venta.id}`,
       })
+        if (imprimir) await postVenta(ventaData.venta, 0)
         onExito(ventaData, 0)
       } else {
         const payload = {
@@ -189,6 +201,7 @@ export default function ModalPago({ total, carrito, onExito, onCerrar }) {
             producto_id: item.producto_id,
             cantidad:    item.cantidad,
             descuento:   item.descuento || 0,
+            precio_unit: item.precio_unit,
           })),
           pagos: [{
             forma_pago_id: formaPagoId,
@@ -196,16 +209,7 @@ export default function ModalPago({ total, carrito, onExito, onCerrar }) {
           }],
         }
         const { data } = await ventasService.procesar(payload)
-        if (esEfectivo) {
-          try {
-            await fetch('http://localhost:8765/abrir-cajon', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-            })
-          } catch {
-            console.warn('CajonPOS no disponible')
-          }
-        }
+        await postVenta(data.venta, cambio)
         onExito(data, cambio)
       }
     } catch (err) {
@@ -461,6 +465,18 @@ export default function ModalPago({ total, carrito, onExito, onCerrar }) {
             {error}
           </div>
         )}
+
+        {/* Imprimir recibo (opcional) */}
+        <label className="flex items-center gap-3 mb-4 cursor-pointer select-none px-4 py-3 rounded-xl"
+               style={{ background: 'rgba(139,92,246,0.08)', border: '1px solid rgba(139,92,246,0.15)' }}>
+          <input type="checkbox" checked={imprimir}
+                 onChange={e => toggleImprimir(e.target.checked)}
+                 className="w-5 h-5 accent-purple-500" />
+          <span className="text-sm font-semibold text-white">🖨️ Imprimir recibo</span>
+          <span className="text-xs ml-auto" style={{ color: 'rgba(196,181,253,0.5)' }}>
+            {imprimir ? 'Imprime y abre el cajón' : 'Solo abre el cajón'}
+          </span>
+        </label>
 
         {/* Botón cobrar */}
         <button
